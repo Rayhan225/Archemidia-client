@@ -1,0 +1,33 @@
+[gd_scene load_steps=5 format=3 uid="uid://d0mn766ihx87r"]
+
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cwwxvi5m73rn4" path="res://Assets/Moss_tree1.png" id="2_tex"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_v6xo0"]
+size = Vector2(16, 13)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_x16pi"]
+radius = 19.416489
+
+[node name="MossTree" type="StaticBody2D"]
+y_sort_enabled = true
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+script = ExtResource("1_script")
+target_sprite_path = NodePath("../Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_tex")
+offset = Vector2(0, -32)
+
+[node name="CollisionPolygon2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -19.5)
+shape = SubResource("RectangleShape2D_v6xo0")
+
+[node name="OcclusionArea" type="Area2D" parent="."]
+scale = Vector2(1.5, 1.5)
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OcclusionArea"]
+position = Vector2(0, -28)
+shape = SubResource("CircleShape2D_x16pi")

@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3 uid="uid://ygji0wxmnxkp"]
+
+[ext_resource type="Script" uid="uid://dnxl3st3b86hx" path="res://Scripts/WaterLayer.gd" id="1_72qsd"]
+[ext_resource type="Shader" uid="uid://yyf3k0mqq3gg" path="res://water.gdshader" id="1_3706o"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_72qsd"]
+shader = ExtResource("1_3706o")
+shader_parameter/water_color = Color(0.2, 0.6, 0.8, 1)
+shader_parameter/grid_color = Color(1, 1, 1, 0.5)
+shader_parameter/tile_size = 64.0
+shader_parameter/rect_size = Vector2(4000, 4000)
+shader_parameter/animation_speed = 3.0
+shader_parameter/bounce_height = 4.0
+
+[node name="WaterLayer" type="ParallaxBackground"]
+script = ExtResource("1_72qsd")
+
+[node name="ParallaxLayer" type="ParallaxLayer" parent="."]
+motion_mirroring = Vector2(4000, 4000)
+
+[node name="ColorRect" type="ColorRect" parent="ParallaxLayer"]
+material = SubResource("ShaderMaterial_72qsd")
+offset_right = 40.0
+offset_bottom = 40.0

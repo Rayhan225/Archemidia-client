@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3 uid="uid://bpk5dat6s2rht"]
+
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="1_608ly"]
+[ext_resource type="Texture2D" uid="uid://b0nnxgmnaq7cj" path="res://Assets/tex_trunk.tres" id="2_608ly"]
+
+[node name="Trunk" type="StaticBody2D"]
+y_sort_enabled = true
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+script = ExtResource("1_608ly")
+target_sprite_path = NodePath("../Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_608ly")
+offset = Vector2(0, -4)
+region_rect = Rect2(88, 630, 36, 22)
+
+[node name="CollisionShape2D" type="CollisionPolygon2D" parent="."]
+position = Vector2(-0.6666667, -1.3333334)
+rotation = 1.5708
+polygon = PackedVector2Array(-6.666571, 26.333357, -4.6665916, 20.666683, -5.333273, 16.666687, -5.333317, 4.666686, -5.3333383, -1.3333141, -4.6667004, -9.333317, -4.0000505, -13.999987, -1.3333961, -17.333328, 0.66660637, -16.66667, 1.3332949, -10.666672, 0.9999819, -5.000004, -7.2399807e-06, -2, -2.3841858e-06, -0.6666667, 4.826654e-06, 1.3333334, -0.6666497, 4.666669, 0.33339977, 18.333332, 6.3334327, 27.333311, 2.666744, 21.333323, 0.66674393, 21.33333, -3.3332562, 21.333345)

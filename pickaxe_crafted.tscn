@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://cuys1oyi32ebk"]
+
+[ext_resource type="Texture2D" uid="uid://c745uvhsiyl6a" path="res://Assets/pickaxe-iron.png" id="1_gq1q5"]
+[ext_resource type="Script" uid="uid://cxv47io8btbkf" path="res://Scripts/ItemDrop.gd" id="2_script"]
+
+[node name="pickaxe_crafted" type="Area2D"]
+scale = Vector2(0.3, 0.3)
+script = ExtResource("2_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+rotation = -0.36651915
+scale = Vector2(0.25, 0.25)
+texture = ExtResource("1_gq1q5")
+offset = Vector2(1.685, -0.86)

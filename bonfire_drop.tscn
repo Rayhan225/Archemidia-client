@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://bonfire_drop_scene"]
+
+[ext_resource type="Texture2D" uid="uid://8f4f9347-4af0-4c67-bb37-243bab30648e" path="res://Assets/Bonfire_02-Sheet.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://cxv47io8btbkf" path="res://Scripts/ItemDrop.gd" id="2_script"]
+
+[node name="bonfire_drop" type="Area2D"]
+scale = Vector2(0.6, 0.6)
+script = ExtResource("2_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_tex")
+offset = Vector2(0, -5)
+region_enabled = true
+region_rect = Rect2(0, 0, 32, 32)

@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://b6wc7pvho6h7n"]
+
+[ext_resource type="Script" uid="uid://cxv47io8btbkf" path="res://Scripts/ItemDrop.gd" id="1_srsfq"]
+[ext_resource type="Texture2D" uid="uid://d1p1d3wfhbii6" path="res://Assets/icons/Stone.png" id="3_682ha"]
+
+[node name="StoneDrop" type="Area2D"]
+y_sort_enabled = true
+script = ExtResource("1_srsfq")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("3_682ha")
+offset = Vector2(13.415, 0)

@@ -1,0 +1,29 @@
+[gd_scene load_steps=2 format=3 uid="uid://krvisend6w6q"]
+
+[sub_resource type="Curve" id="Curve_p7vx5"]
+_limits = [0.0, 100.0, 0.0, 1.0]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.3139535, 96.62921), 0.0, 0.0, 0, 0, Vector2(0.6627907, 88.764046), 0.0, 0.0, 0, 0, Vector2(1, 100), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[node name="WeatherSystem" type="CanvasLayer"]
+layer = 2
+
+[node name="RainParticles" type="CPUParticles2D" parent="."]
+y_sort_enabled = true
+position = Vector2(576, 324)
+rotation = 3.1415927
+amount = 1200
+fixed_fps = 60
+local_coords = true
+draw_order = 1
+emission_shape = 3
+emission_rect_extents = Vector2(600, 600)
+particle_flag_align_y = true
+direction = Vector2(2, -1)
+spread = 0.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 400.0
+initial_velocity_max = 600.0
+damping_curve = SubResource("Curve_p7vx5")
+scale_amount_min = 0.0
+color = Color(0, 0.9706592, 0.9790413, 1)

@@ -1,0 +1,34 @@
+[gd_scene load_steps=3 format=3 uid="uid://7kwq2gyqv4nt"]
+
+[ext_resource type="Script" uid="uid://cxl6ae8ns8hoi" path="res://Scripts/GameUI.gd" id="1_5v8q7"]
+[ext_resource type="Theme" uid="uid://diukdwl5nq50p" path="res://PixelTheme.tres" id="2_qate7"]
+
+[node name="GameUI" type="CanvasLayer"]
+layer = 3
+script = ExtResource("1_5v8q7")
+
+[node name="InventoryWindow" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_qate7")
+
+[node name="Panel" type="Panel" parent="InventoryWindow"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="GridContainer" type="GridContainer" parent="InventoryWindow/Panel"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+columns = 4

@@ -1,0 +1,57 @@
+[gd_scene load_steps=11 format=3 uid="uid://bu4bm8pyl3rtm"]
+
+[ext_resource type="Script" uid="uid://b0w8uq7m4rb48" path="res://effect_poof.gd" id="1_vanyv"]
+[ext_resource type="Texture2D" uid="uid://l6l3hv6p6pct" path="res://Assets/tile0.png" id="2_4d85j"]
+[ext_resource type="Texture2D" uid="uid://b6eqhq3lghs4d" path="res://Assets/tile1.png" id="3_txv1m"]
+[ext_resource type="Texture2D" uid="uid://owmvxnbrry0m" path="res://Assets/tile2.png" id="4_oq5gf"]
+[ext_resource type="Texture2D" uid="uid://bo7gn4vykwgbm" path="res://Assets/tile3.png" id="5_vy72j"]
+[ext_resource type="Texture2D" uid="uid://uw1pjt2eowah" path="res://Assets/tile4.png" id="6_s3w4f"]
+[ext_resource type="Texture2D" uid="uid://dpv5adjvfcy4t" path="res://Assets/tile5.png" id="7_362fi"]
+[ext_resource type="Texture2D" uid="uid://bh3d4q4a2uvan" path="res://Assets/tile6.png" id="8_yfy6u"]
+[ext_resource type="Texture2D" uid="uid://c234qve7vdtdo" path="res://Assets/tile7.png" id="9_sfqje"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_nnwmv"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_4d85j")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_txv1m")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_oq5gf")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_vy72j")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_s3w4f")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_362fi")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_yfy6u")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_sfqje")
+}],
+"loop": true,
+"name": &"Poof",
+"speed": 7.0
+}]
+
+[node name="EffectPoof" type="GPUParticles2D"]
+y_sort_enabled = true
+scale = Vector2(0.5, 0.5)
+emitting = false
+one_shot = true
+script = ExtResource("1_vanyv")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_nnwmv")
+animation = &"Poof"
+autoplay = "Poof"
+frame_progress = 0.9467215
+offset = Vector2(0, -32)

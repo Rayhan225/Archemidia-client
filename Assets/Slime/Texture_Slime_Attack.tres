@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" load_steps=3 format=3 uid="uid://caixf07i3x20u"]
+
+[ext_resource type="Texture2D" uid="uid://dgc8c5it5j4qq" path="res://Assets/Slime/Slime1_Attack_without_shadow.png" id="1_5yw6k"]
+[ext_resource type="Texture2D" uid="uid://njqx7tojb2ch" path="res://Assets/Slime/Slime1_Attack_without_shadow_n.png" id="2_uwwg4"]
+
+[resource]
+diffuse_texture = ExtResource("1_5yw6k")
+normal_texture = ExtResource("2_uwwg4")

@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://ceeobhxix5h2h"]
+
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bhph07ythjgjk" path="res://Assets/Rock5_1_no_shadow.png" id="2_tex"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ae75k"]
+radius = 20.615528
+
+[node name="Rock" type="StaticBody2D"]
+y_sort_enabled = true
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+scale = Vector2(1, 0.3)
+script = ExtResource("1_script")
+target_sprite_path = NodePath("../Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_tex")
+offset = Vector2(0, -8)
+
+[node name="CollisionPolygon2D" type="CollisionShape2D" parent="."]
+position = Vector2(3, -9)
+shape = SubResource("CircleShape2D_ae75k")

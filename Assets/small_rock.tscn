@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://dl58een3o34fc"]
+
+[ext_resource type="Texture2D" uid="uid://ut0e4ieva0uy" path="res://Assets/Rock5_5_no_shadow.png" id="1_tex"]
+
+[node name="SmallRock" type="Node2D"]
+y_sort_enabled = true
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_tex")
+offset = Vector2(0, -2)

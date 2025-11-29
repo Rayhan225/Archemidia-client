@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3 uid="uid://dnwl2ds10cv1m"]
+
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="1_rq0vd"]
+[ext_resource type="Texture2D" uid="uid://t5rlbaa4rnjc" path="res://Assets/tex_snow_stone.tres" id="2_4kbdd"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_6s6ed"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_rot5g"]
+radius = 9.0
+
+[node name="Snow Rock" type="StaticBody2D"]
+y_sort_enabled = true
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+scale = Vector2(0.8, 0.2)
+script = ExtResource("1_rq0vd")
+target_sprite_path = NodePath("../Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+material = SubResource("CanvasItemMaterial_6s6ed")
+texture = ExtResource("2_4kbdd")
+offset = Vector2(0, -10)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -7)
+shape = SubResource("CircleShape2D_rot5g")

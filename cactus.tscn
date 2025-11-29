@@ -1,0 +1,39 @@
+[gd_scene load_steps=7 format=3 uid="uid://c7t06hkdwscde"]
+
+[ext_resource type="Script" uid="uid://bc7w7hhs0776j" path="res://Scripts/Tree.gd" id="1_l2xdd"]
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="1_shadow"]
+[ext_resource type="Texture2D" uid="uid://btrn0418gny" path="res://Assets/tex_cactus.tres" id="3_l2xdd"]
+
+[sub_resource type="CanvasItemMaterial" id="mat"]
+
+[sub_resource type="CircleShape2D" id="shape"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_pveng"]
+radius = 18.000002
+
+[node name="Cactus" type="StaticBody2D"]
+y_sort_enabled = true
+script = ExtResource("1_l2xdd")
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+scale = Vector2(0.6, 0.15)
+script = ExtResource("1_shadow")
+target_sprite_path = NodePath("../Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+material = SubResource("mat")
+scale = Vector2(2, 2)
+texture = ExtResource("3_l2xdd")
+offset = Vector2(0, -10)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -8)
+shape = SubResource("shape")
+
+[node name="OcclusionArea" type="Area2D" parent="."]
+scale = Vector2(1.5, 1.5)
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OcclusionArea"]
+position = Vector2(0, -19.333334)
+shape = SubResource("CircleShape2D_pveng")

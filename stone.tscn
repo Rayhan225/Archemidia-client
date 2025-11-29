@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3 uid="uid://cylap0hipqb37"]
+
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="1_rq0vd"]
+[ext_resource type="Texture2D" uid="uid://cbgmfd7cnkoxa" path="res://Assets/tex_stone.tres" id="2_rq0vd"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_6s6ed"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_rot5g"]
+radius = 10.049875
+
+[node name="Stone" type="StaticBody2D"]
+y_sort_enabled = true
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+scale = Vector2(0.5, 0.1)
+script = ExtResource("1_rq0vd")
+target_sprite_path = NodePath("../Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+material = SubResource("CanvasItemMaterial_6s6ed")
+position = Vector2(5.9604645e-08, 9.536743e-07)
+scale = Vector2(0.5, 0.5)
+skew = -0.02617994
+texture = ExtResource("2_rq0vd")
+offset = Vector2(0, -20)
+region_rect = Rect2(0, 656, 62, 63)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(1, -11)
+rotation = 4.712389
+shape = SubResource("CircleShape2D_rot5g")

@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://c6c38ho5ta4b"]
+
+[ext_resource type="Script" uid="uid://cxv47io8btbkf" path="res://Scripts/ItemDrop.gd" id="1_of0tt"]
+[ext_resource type="Texture2D" uid="uid://qfc534j6eq7f" path="res://Assets/icons/Wood.png" id="3_bin6p"]
+
+[node name="TreeDrop" type="Area2D"]
+y_sort_enabled = true
+script = ExtResource("1_of0tt")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("3_bin6p")
+offset = Vector2(1.685, -0.86)

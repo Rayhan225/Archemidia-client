@@ -1,0 +1,122 @@
+[gd_scene load_steps=16 format=3 uid="uid://b77kdr4ngv1mc"]
+
+[ext_resource type="Texture2D" uid="uid://bxm421ml6w4r0" path="res://Assets/Bonfire_02-Sheet.png" id="1_tex"]
+[ext_resource type="Texture2D" uid="uid://c8ylgt5ygptmm" path="res://Assets/Fire_01-Sheet.png" id="2_fire_tex"]
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="3_shadow"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b1"]
+atlas = ExtResource("1_tex")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b2"]
+atlas = ExtResource("1_tex")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b3"]
+atlas = ExtResource("1_tex")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b4"]
+atlas = ExtResource("1_tex")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_bonfire"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b4")
+}],
+"loop": true,
+"name": &"default",
+"speed": 8.0
+}]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wfoe5"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(0, 0, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b8r8p"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(32, 0, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8ileh"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(64, 0, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k8a0i"]
+atlas = ExtResource("2_fire_tex")
+region = Rect2(96, 0, 32, 48)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_fire"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wfoe5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b8r8p")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8ileh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_k8a0i")
+}],
+"loop": true,
+"name": &"burn",
+"speed": 10.0
+}]
+
+[sub_resource type="Gradient" id="Gradient_light"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_light"]
+gradient = SubResource("Gradient_light")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.8043478, 0.87391305)
+
+[node name="Bonfire" type="StaticBody2D"]
+y_sort_enabled = true
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+scale = Vector2(0.8, 0.4)
+script = ExtResource("3_shadow")
+target_sprite_path = NodePath("../AnimatedSprite2D")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_bonfire")
+autoplay = "default"
+frame_progress = 0.27768174
+offset = Vector2(0, -6)
+
+[node name="Fire" type="AnimatedSprite2D" parent="AnimatedSprite2D"]
+position = Vector2(0, -12)
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"burn"
+autoplay = "burn"
+frame_progress = 0.8587028
+
+[node name="FireShadow" type="Node2D" parent="AnimatedSprite2D/Fire"]
+scale = Vector2(0.6, 0.3)
+script = ExtResource("3_shadow")
+target_sprite_path = NodePath("..")
+
+[node name="PointLight2D" type="PointLight2D" parent="AnimatedSprite2D/Fire"]
+scale = Vector2(2, 2)
+color = Color(1, 0.6, 0.2, 1)
+texture = SubResource("GradientTexture2D_light")
+texture_scale = 3.0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+position = Vector2(0, -4)
+polygon = PackedVector2Array(-8, 0, 0, 4, 8, 0, 0, -4)

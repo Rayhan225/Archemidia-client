@@ -1,0 +1,110 @@
+[gd_scene load_steps=19 format=3 uid="uid://kflknp8hnipt"]
+
+[ext_resource type="PackedScene" uid="uid://doga8qnrff86s" path="res://player.tscn" id="1_f3sb7"]
+[ext_resource type="Texture2D" uid="uid://cqlt173bgjtg1" path="res://Assets/Tiles 02.png" id="1_fj7yv"]
+[ext_resource type="PackedScene" uid="uid://ygji0wxmnxkp" path="res://water_layer.tscn" id="1_k3n1d"]
+[ext_resource type="Texture2D" uid="uid://2u2anq8u5sqw" path="res://Assets/tex_grass_tile.tres" id="2_ic0uy"]
+[ext_resource type="Script" uid="uid://duooegvjt8jfs" path="res://Scripts/WorldBuilder.gd" id="3_036b0"]
+[ext_resource type="Texture2D" uid="uid://rjpbwt4jbkww" path="res://Assets/Jungle tile.png" id="3_gbfbk"]
+[ext_resource type="Texture2D" uid="uid://b48ens0t3x02" path="res://Assets/Sand Tile.png" id="4_ioo17"]
+[ext_resource type="Texture2D" uid="uid://cdg63n2c5m1g" path="res://Assets/Snow tile.png" id="5_wse8f"]
+[ext_resource type="PackedScene" uid="uid://dqebkx73fmp1g" path="res://day_night_cycle.tscn" id="6_dwbse"]
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="7_wse8f"]
+[ext_resource type="Script" uid="uid://cnwh31g0b3mof" path="res://Scripts/InteractionManager.gd" id="9_ioo17"]
+[ext_resource type="PackedScene" uid="uid://7kwq2gyqv4nt" path="res://GameUI.tscn" id="10_ic0uy"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ic0uy"]
+texture = ExtResource("3_gbfbk")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(0, -16)
+0:0/0/modulate = Color(0.89411765, 0.89411765, 0.89411765, 1)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_tlwt5"]
+texture = ExtResource("1_fj7yv")
+texture_region_size = Vector2i(64, 64)
+0:0/next_alternative_id = 4
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(0, -16)
+0:0/0/terrain_set = 0
+0:0/0/terrain = 0
+0:0/0/terrains_peering_bit/right_corner = 0
+0:0/0/terrains_peering_bit/bottom_right_side = 0
+0:0/0/terrains_peering_bit/bottom_corner = 0
+0:0/0/terrains_peering_bit/bottom_left_side = 0
+0:0/0/terrains_peering_bit/left_corner = 0
+0:0/0/terrains_peering_bit/top_left_side = 0
+0:0/0/terrains_peering_bit/top_corner = 0
+0:0/0/terrains_peering_bit/top_right_side = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_70uel"]
+texture = ExtResource("2_ic0uy")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(0, -16)
+0:0/0/modulate = Color(0.89411765, 0.89411765, 0.89411765, 1)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_k3n1d"]
+texture = ExtResource("4_ioo17")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(0, -16)
+0:0/0/modulate = Color(0.89411765, 0.89411765, 0.89411765, 1)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2o6r5"]
+texture = ExtResource("5_wse8f")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(0, -16)
+0:0/0/modulate = Color(0.89492244, 0.89492244, 0.8949224, 1)
+
+[sub_resource type="TileSet" id="TileSet_pkg7o"]
+tile_shape = 1
+tile_layout = 5
+tile_size = Vector2i(64, 32)
+terrain_set_0/mode = 0
+terrain_set_0/terrain_0/name = "Green"
+terrain_set_0/terrain_0/color = Color(0.28627452, 0.58431375, 0, 1)
+terrain_set_0/terrain_1/name = "Sand"
+terrain_set_0/terrain_1/color = Color(0.7607843, 0.5921569, 0.16470589, 1)
+terrain_set_0/terrain_2/name = "Forest"
+terrain_set_0/terrain_2/color = Color(0.16862746, 0.4745098, 0, 1)
+terrain_set_0/terrain_3/name = "Snow"
+terrain_set_0/terrain_3/color = Color(0.375, 0.5, 0.25, 1)
+sources/6 = SubResource("TileSetAtlasSource_2o6r5")
+sources/5 = SubResource("TileSetAtlasSource_k3n1d")
+sources/3 = SubResource("TileSetAtlasSource_tlwt5")
+sources/0 = SubResource("TileSetAtlasSource_ic0uy")
+sources/4 = SubResource("TileSetAtlasSource_70uel")
+
+[node name="World" type="Node2D"]
+
+[node name="WaterLayer" parent="." instance=ExtResource("1_k3n1d")]
+
+[node name="DayNightCycle" parent="." instance=ExtResource("6_dwbse")]
+position = Vector2(-587, -291)
+
+[node name="TileMapLayer" type="TileMapLayer" parent="."]
+z_index = -1
+tile_set = SubResource("TileSet_pkg7o")
+script = ExtResource("3_036b0")
+player_path = NodePath("../Objects/Player")
+
+[node name="ShadowGenerator" type="Node2D" parent="TileMapLayer"]
+scale = Vector2(0.5, 0.1)
+script = ExtResource("7_wse8f")
+target_sprite_path = NodePath("../Sprite2D")
+
+[node name="Objects" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="ShadowLayer" type="CanvasGroup" parent="Objects"]
+self_modulate = Color(0, 0, 0, 0.4)
+z_index = -1
+
+[node name="Player" parent="Objects" instance=ExtResource("1_f3sb7")]
+
+[node name="InteractionManager" type="Node2D" parent="."]
+script = ExtResource("9_ioo17")
+
+[node name="GameUI" parent="." instance=ExtResource("10_ic0uy")]

@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3 uid="uid://dos4xmtvjid1q"]
+
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="1_qopxf"]
+[ext_resource type="Texture2D" uid="uid://cx73s3pblaa0a" path="res://Assets/Crafting Table.png" id="2_qopxf"]
+
+[node name="crafting_table" type="StaticBody2D"]
+y_sort_enabled = true
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+scale = Vector2(0.5, 0.1)
+script = ExtResource("1_qopxf")
+target_sprite_path = NodePath("../CraftingTable")
+
+[node name="CraftingTable" type="Sprite2D" parent="."]
+texture = ExtResource("2_qopxf")
+offset = Vector2(0, -2)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+position = Vector2(0, 28)
+scale = Vector2(2, 2)
+polygon = PackedVector2Array(-0.5, -15, -15, -21.5, -15, -13.5, -15.5, -14, -15.5, -23, 0.5, -26, 15, -23, 15, -15, 14.5, -15.5, 14.5, -21, 0.5, -15)

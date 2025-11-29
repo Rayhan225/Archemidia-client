@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" load_steps=3 format=3 uid="uid://ssx8w2v8veja"]
+
+[ext_resource type="Texture2D" uid="uid://csnrecvhmikej" path="res://Assets/Slime/Slime1_Run_without_shadow.png" id="1_mwngl"]
+[ext_resource type="Texture2D" uid="uid://m0cvvvq5nkux" path="res://Assets/Slime/Slime1_Run_without_shadow_n.png" id="2_byhgg"]
+
+[resource]
+diffuse_texture = ExtResource("1_mwngl")
+normal_texture = ExtResource("2_byhgg")

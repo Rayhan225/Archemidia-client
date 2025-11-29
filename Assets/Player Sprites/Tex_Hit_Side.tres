@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" load_steps=3 format=3 uid="uid://c360g5153a42p"]
+
+[ext_resource type="Texture2D" uid="uid://dq64gcg5cqit1" path="res://Assets/Player Sprites/Hit_Side-Sheet.png" id="1_o18b7"]
+[ext_resource type="Texture2D" uid="uid://brqov0rhhdci5" path="res://Assets/Player Sprites/Hit_Side-Sheet_n.png" id="2_epage"]
+
+[resource]
+diffuse_texture = ExtResource("1_o18b7")
+normal_texture = ExtResource("2_epage")

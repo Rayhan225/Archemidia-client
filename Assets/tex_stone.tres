@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" load_steps=3 format=3 uid="uid://cbgmfd7cnkoxa"]
+
+[ext_resource type="Texture2D" uid="uid://be8dmuv3ovcdu" path="res://Assets/Rock4_1_no_shadow.png" id="1_efh0a"]
+[ext_resource type="Texture2D" uid="uid://cxr25agmepp8g" path="res://Assets/Rock4_1_no_shadow_n.png" id="2_d4c7r"]
+
+[resource]
+diffuse_texture = ExtResource("1_efh0a")
+normal_texture = ExtResource("2_d4c7r")

@@ -1,0 +1,90 @@
+[gd_scene load_steps=8 format=4 uid="uid://kflknp8hnipt"]
+
+[ext_resource type="PackedScene" uid="uid://doga8qnrff86s" path="res://player.tscn" id="1_f3sb7"]
+[ext_resource type="Texture2D" uid="uid://cqlt173bgjtg1" path="res://Assets/Tiles 02.png" id="1_fj7yv"]
+[ext_resource type="Script" uid="uid://duooegvjt8jfs" path="res://Scripts/WorldBuilder.gd" id="3_036b0"]
+[ext_resource type="PackedScene" uid="uid://d3ddkt6kox3aw" path="res://tree.tscn" id="3_tlwt5"]
+[ext_resource type="PackedScene" uid="uid://dqebkx73fmp1g" path="res://day_night_cycle.tscn" id="6_dwbse"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_tlwt5"]
+texture = ExtResource("1_fj7yv")
+texture_region_size = Vector2i(64, 64)
+0:0/next_alternative_id = 3
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(0, -16)
+0:0/0/terrain_set = 0
+0:0/0/terrain = 0
+0:0/0/terrains_peering_bit/right_corner = 0
+0:0/0/terrains_peering_bit/bottom_right_side = 0
+0:0/0/terrains_peering_bit/bottom_corner = 0
+0:0/0/terrains_peering_bit/bottom_left_side = 0
+0:0/0/terrains_peering_bit/left_corner = 0
+0:0/0/terrains_peering_bit/top_left_side = 0
+0:0/0/terrains_peering_bit/top_corner = 0
+0:0/0/terrains_peering_bit/top_right_side = 0
+0:0/1 = 1
+0:0/1/texture_origin = Vector2i(0, -16)
+0:0/1/modulate = Color(0.9265697, 0, 0.39679512, 1)
+0:0/1/terrain_set = 0
+0:0/1/terrain = 1
+0:0/1/terrains_peering_bit/right_corner = 1
+0:0/1/terrains_peering_bit/bottom_right_side = 1
+0:0/1/terrains_peering_bit/bottom_corner = 1
+0:0/1/terrains_peering_bit/bottom_left_side = 1
+0:0/1/terrains_peering_bit/left_corner = 1
+0:0/1/terrains_peering_bit/top_left_side = 1
+0:0/1/terrains_peering_bit/top_corner = 1
+0:0/1/terrains_peering_bit/top_right_side = 1
+0:0/2 = 2
+0:0/2/texture_origin = Vector2i(0, -16)
+0:0/2/modulate = Color(0, 0.44705883, 0, 1)
+0:0/2/terrain_set = 0
+0:0/2/terrain = 2
+0:0/2/terrains_peering_bit/right_corner = 2
+0:0/2/terrains_peering_bit/bottom_right_side = 2
+0:0/2/terrains_peering_bit/bottom_corner = 2
+0:0/2/terrains_peering_bit/bottom_left_side = 2
+0:0/2/terrains_peering_bit/left_corner = 2
+0:0/2/terrains_peering_bit/top_left_side = 2
+0:0/2/terrains_peering_bit/top_corner = 2
+0:0/2/terrains_peering_bit/top_right_side = 2
+
+[sub_resource type="TileSet" id="TileSet_pkg7o"]
+tile_shape = 1
+tile_layout = 5
+tile_size = Vector2i(64, 32)
+terrain_set_0/mode = 0
+terrain_set_0/terrain_0/name = "Green"
+terrain_set_0/terrain_0/color = Color(0.28627452, 0.58431375, 0, 1)
+terrain_set_0/terrain_1/name = "Sand"
+terrain_set_0/terrain_1/color = Color(0.7607843, 0.5921569, 0.16470589, 1)
+terrain_set_0/terrain_2/name = "Forest"
+terrain_set_0/terrain_2/color = Color(0.16862746, 0.4745098, 0, 1)
+sources/3 = SubResource("TileSetAtlasSource_tlwt5")
+
+[node name="World" type="Node2D"]
+
+[node name="DayNightCycle" parent="." instance=ExtResource("6_dwbse")]
+position = Vector2(577, -309)
+
+[node name="TileMapLayer" type="TileMapLayer" parent="."]
+z_index = -1
+tile_map_data = PackedByteArray("AAD9//7/AwAAAAAAAAD9////AwAAAAAAAAD9/wAAAwAAAAAAAAD9/wEAAwAAAAAAAAD9/wIAAwAAAAAAAAD+//7/AwAAAAAAAAD+////AwAAAAAAAAD+/wAAAwAAAAAAAAD+/wEAAwAAAAAAAAD+/wIAAwAAAAAAAAD///7/AwAAAAAAAAD/////AwAAAAAAAAD//wAAAwAAAAAAAAD//wEAAwAAAAAAAAD//wIAAwAAAAAAAAAAAP7/AwAAAAAAAAAAAP//AwAAAAAAAAAAAAAAAwAAAAAAAAAAAAIAAwAAAAAAAAABAP7/AwAAAAAAAAABAP//AwAAAAAAAAABAAAAAwAAAAAAAAABAAEAAwAAAAAAAAABAAIAAwAAAAAAAAAAAAEAAwAAAAAAAAA=")
+tile_set = SubResource("TileSet_pkg7o")
+script = ExtResource("3_036b0")
+player_path = NodePath("../Objects/Player")
+
+[node name="Objects" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="ShadowLayer" type="CanvasGroup" parent="Objects"]
+self_modulate = Color(0, 0, 0, 0.4)
+z_index = -1
+
+[node name="Player" parent="Objects" instance=ExtResource("1_f3sb7")]
+
+[node name="Tree" parent="Objects" instance=ExtResource("3_tlwt5")]
+position = Vector2(-37, -14)
+
+[node name="Tree2" parent="Objects" instance=ExtResource("3_tlwt5")]
+position = Vector2(60, 35)

@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3 uid="uid://hpk1h0dw51yk"]
+
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="1_shadow"]
+[ext_resource type="Texture2D" uid="uid://cqriq7a8leebe" path="res://Assets/tex_sand_rock.tres" id="2_w2yol"]
+
+[sub_resource type="CanvasItemMaterial" id="mat"]
+
+[sub_resource type="CircleShape2D" id="shape"]
+radius = 14.0
+
+[node name="Sand Rock" type="StaticBody2D"]
+y_sort_enabled = true
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+scale = Vector2(0.8, 0.2)
+script = ExtResource("1_shadow")
+target_sprite_path = NodePath("../Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+material = SubResource("mat")
+texture = ExtResource("2_w2yol")
+offset = Vector2(0, -10)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(1, -5)
+shape = SubResource("shape")

@@ -1,0 +1,38 @@
+[gd_scene load_steps=6 format=3 uid="uid://cwf0c7pt3mmjk"]
+
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="2_hy4hq"]
+[ext_resource type="Texture2D" uid="uid://hc8q2wslx6f2" path="res://Assets/tex_snow_tree.tres" id="3_85vor"]
+[ext_resource type="Script" uid="uid://bc7w7hhs0776j" path="res://Scripts/Tree.gd" id="10_oph6y"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hy4hq"]
+size = Vector2(8, 9.5)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hy4hq"]
+radius = 35.69158
+
+[node name="Snow Tree" type="StaticBody2D"]
+y_sort_enabled = true
+script = ExtResource("10_oph6y")
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+z_index = 1
+y_sort_enabled = true
+script = ExtResource("2_hy4hq")
+
+[node name="AnimatedSprite2D" type="Sprite2D" parent="."]
+scale = Vector2(1.5, 1.5)
+texture = ExtResource("3_85vor")
+offset = Vector2(0, -30)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(2, -10.5)
+scale = Vector2(2, 2)
+shape = SubResource("RectangleShape2D_hy4hq")
+
+[node name="OcclusionArea" type="Area2D" parent="."]
+scale = Vector2(1.5, 1.5)
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OcclusionArea"]
+position = Vector2(1, -38)
+shape = SubResource("CircleShape2D_hy4hq")

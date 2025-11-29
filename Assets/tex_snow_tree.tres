@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" load_steps=3 format=3 uid="uid://hc8q2wslx6f2"]
+
+[ext_resource type="Texture2D" uid="uid://bqymnkplqr8cj" path="res://Assets/Snow_christmass_tree1.png" id="1_3gwoc"]
+[ext_resource type="Texture2D" uid="uid://gndjyd3w5of1" path="res://Assets/Snow_christmass_tree1_n.png" id="2_ff08r"]
+
+[resource]
+diffuse_texture = ExtResource("1_3gwoc")
+normal_texture = ExtResource("2_ff08r")

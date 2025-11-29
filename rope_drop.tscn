@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://yia6gc8qp2w4"]
+
+[ext_resource type="Script" uid="uid://cxv47io8btbkf" path="res://Scripts/ItemDrop.gd" id="2_script"]
+
+[node name="rope_drop" type="Area2D"]
+script = ExtResource("2_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+offset = Vector2(1.685, -0.86)

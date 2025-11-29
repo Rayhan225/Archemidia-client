@@ -1,0 +1,8 @@
+[gd_resource type="CanvasTexture" load_steps=3 format=3 uid="uid://cuqeid0fc1q4i"]
+
+[ext_resource type="Texture2D" uid="uid://g4rurrkcgk31" path="res://Assets/Player Sprites/Idle_Up-Sheet.png" id="1_sk8xo"]
+[ext_resource type="Texture2D" uid="uid://c3bpv7k6tox2p" path="res://Assets/Player Sprites/Idle_Up-Sheet_n.png" id="2_lufjq"]
+
+[resource]
+diffuse_texture = ExtResource("1_sk8xo")
+normal_texture = ExtResource("2_lufjq")

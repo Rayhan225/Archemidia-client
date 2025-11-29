@@ -1,0 +1,38 @@
+[gd_scene load_steps=6 format=3 uid="uid://bx7g4adtq23e0"]
+
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="2_shadow"]
+[ext_resource type="Texture2D" uid="uid://n6wcm6dphaui" path="res://Assets/tex_palm_tree.tres" id="3_pty8u"]
+[ext_resource type="Script" uid="uid://bc7w7hhs0776j" path="res://Scripts/Tree.gd" id="10_logic"]
+
+[sub_resource type="RectangleShape2D" id="rect_shape"]
+size = Vector2(9, 6.75)
+
+[sub_resource type="CircleShape2D" id="circ_shape"]
+radius = 35.0
+
+[node name="Palm Tree" type="StaticBody2D"]
+y_sort_enabled = true
+script = ExtResource("10_logic")
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+z_index = 1
+y_sort_enabled = true
+script = ExtResource("2_shadow")
+
+[node name="AnimatedSprite2D" type="Sprite2D" parent="."]
+scale = Vector2(1.5, 1.5)
+texture = ExtResource("3_pty8u")
+offset = Vector2(0, -30)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(1, -7.75)
+scale = Vector2(2, 2)
+shape = SubResource("rect_shape")
+
+[node name="OcclusionArea" type="Area2D" parent="."]
+scale = Vector2(1.5, 1.5)
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OcclusionArea"]
+position = Vector2(1, -38)
+shape = SubResource("circ_shape")

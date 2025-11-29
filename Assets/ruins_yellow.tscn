@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://dl3pbrqa6hf6g"]
+
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://blaqfk8jrcjt7" path="res://Assets/Yellow_ruins2.png" id="2_tex"]
+
+[node name="RuinsYellow" type="StaticBody2D"]
+y_sort_enabled = true
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+script = ExtResource("1_script")
+target_sprite_path = NodePath("../Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_tex")
+offset = Vector2(0, -16)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+position = Vector2(-11, 7)
+polygon = PackedVector2Array(34, -32, 24, -29, 21, -23, 17, -22, 17, -20, 9, -26, 4, -26, 5, -15, 5, 6, -11, 2, -12, -35, 3, -51, 23, -47, 27, -39)
