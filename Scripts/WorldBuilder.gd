@@ -34,15 +34,10 @@ var pickaxe_drop_scene = preload("res://pickaxe_crafted.tscn")
 var table_drop_scene = preload("res://crafting_table_drop.tscn")
 var bonfire_drop_scene = preload("res://bonfire_drop.tscn")
 
-var biome_noise = FastNoiseLite.new()
-
 # Coastline Overlay
 var coastline_overlay: Node2D
 
 func _ready():
-	biome_noise.seed = 12345
-	biome_noise.frequency = 0.05
-	
 	NetworkManager.server_message_received.connect(_on_server_update)
 	if player_path: player = get_node(player_path)
 	else: player = get_tree().root.find_child("Player", true, false)
@@ -59,23 +54,15 @@ func _ready():
 		# Initial Load
 		update_chunks_progressive(floor(p.x/float(CHUNK_SIZE)), floor(p.y/float(CHUNK_SIZE)))
 
-# [FIX 2] Client-side placement check (based on TileMap Layer)
+# Client-side placement check
 func is_tile_placeable(coord: Vector2i) -> bool:
 	# Check 1: Is there a manually placed object already?
 	if objects_by_coord.has(coord): 
-		# If the object is Grass, we can overwrite it, but since Grass spawns procedurally,
-		# checking activeObjects_by_coord covers player-placed objects.
-		# We must rely on server for procedural object removal check, but for client UI, 
-		# simply check if map tile is solid/walkable.
 		var existing = objects_by_coord.get(coord)
 		if is_instance_valid(existing): return false
 	
 	# Check 2: Is it a Pond/Void?
 	if get_cell_source_id(coord) == -1: return false
-	
-	# Check 3: Is it too close to the player (optional buffer)
-	# var player_pos = local_to_map(to_local(player.global_position))
-	# if coord.distance_to(player_pos) < 1: return false
 	
 	return true
 
@@ -83,7 +70,6 @@ func _on_server_update(data):
 	if data.get("event") == "position_update":
 		if data.has("monsters"):
 			update_monsters(data["monsters"])
-		# [FIX 3] Sync active objects from server for persistence
 		if data.has("objects"):
 			sync_world_objects(data["objects"])
 			
@@ -106,7 +92,6 @@ func _on_server_update(data):
 		var coord = Vector2i(data.get("x", 0), data.get("y", 0))
 		_real_spawn_object(data.get("type", ""), coord)
 
-# [FIX 3] Handles spawning of buildings placed by other players or on chunk reload
 func sync_world_objects(list):
 	for o in list:
 		var c = Vector2i(o.x, o.y)
@@ -219,12 +204,14 @@ func update_chunks_progressive(cx, cy):
 
 func load_chunk(c, is_immediate: bool):
 	loaded_chunks[c] = "loading"
-	var req = HTTPRequest.new(); add_child(req)
+	var req = HTTPRequest.new();
+	add_child(req)
 	req.request_completed.connect(func(r,co,h,b): _on_chunk(c, req, co, b, is_immediate))
 	req.request("http://localhost:8080/api/map/chunk?x=%d&y=%d&size=16" % [c.x*16, c.y*16])
 
 func unload_chunk(c):
-	var ox = c.x * 16; var oy = c.y * 16
+	var ox = c.x * 16;
+	var oy = c.y * 16
 	for y in range(16):
 		for x in range(16):
 			set_cell(Vector2i(ox+x, oy+y), -1)
@@ -244,35 +231,49 @@ func _on_chunk(c, req, code, body, is_immediate):
 	loaded_chunks[c] = true
 	req.queue_free()
 
+# --- FIX: DETERMINISTIC RANDOM FUNCTION (Matches Java Server) ---
+func get_hash_noise(x: int, y: int) -> float:
+	var seed_val = 12345
+	var n = x * 331 + y * 433 + seed_val
+	# Bitwise mixing to match Java logic
+	n = (n << 13) ^ n
+	n = (n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff
+	return float(n) / 2147483647.0
+
 func render_chunk(d, cx, cy, is_immediate):
-	var ox = cx*16; var oy = cy*16
+	var ox = cx*16;
+	var oy = cy*16
 	
 	var batch_objects = []
 	
 	for y in range(d.size()): 
 		for x in range(d[0].size()):
 			var c = Vector2i(ox+x, oy+y)
-			
 			var tile_id = d[y][x]
 			
 			if tile_id == -1:
 				set_cell(c, -1)
 				continue
 				
+			# Render Terrain Tiles
 			if tile_id == 0: set_cell(c, 3, Vector2i(0,0), 0)   # Grass
 			elif tile_id == 2: set_cell(c, 6, Vector2i(0,0), 0) # Snow
 			elif tile_id == 1: set_cell(c, 5, Vector2i(0,0), 0) # Sand
 			
 			if c.x == 0 and c.y == 0: continue
 
-			var b_noise = biome_noise.get_noise_2d(c.x, 0) * 15.0
-			var isSnow = c.y < -30 + b_noise
-			var isDesert = c.y > 30 + b_noise
+			# --- FIX: USE HASH NOISE INSTEAD OF NOISE/SIN ---
+			# Use exactly same noise function as Java Server
+			var r = get_hash_noise(c.x, c.y)
 			
-			var nv = sin(c.x*12.9898+c.y*78.233)*43758.5453
-			var r = nv-floor(nv)
+			# Biome thresholds with noise
+			var boundary_noise = (get_hash_noise(c.x, 0) - 0.5) * 10.0
+			var isSnow = c.y < -30 + boundary_noise
+			var isDesert = c.y > 30 + boundary_noise
 			
 			var obj_type = ""
+			
+			# Deterministic Object Placement
 			if r < 0.025:
 				if isSnow: obj_type = "Snow Tree"
 				elif isDesert: 

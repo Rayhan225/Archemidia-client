@@ -1,8 +1,9 @@
-[gd_scene load_steps=16 format=3 uid="uid://b77kdr4ngv1mc"]
+[gd_scene load_steps=17 format=3 uid="uid://b77kdr4ngv1mc"]
 
 [ext_resource type="Texture2D" uid="uid://bxm421ml6w4r0" path="res://Assets/Bonfire_02-Sheet.png" id="1_tex"]
 [ext_resource type="Texture2D" uid="uid://c8ylgt5ygptmm" path="res://Assets/Fire_01-Sheet.png" id="2_fire_tex"]
 [ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="3_shadow"]
+[ext_resource type="Script" uid="uid://dnw3ivm1ylomg" path="res://FlickeringLight.gd" id="4_b8r8p"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_b1"]
 atlas = ExtResource("1_tex")
@@ -116,6 +117,7 @@ scale = Vector2(2, 2)
 color = Color(1, 0.6, 0.2, 1)
 texture = SubResource("GradientTexture2D_light")
 texture_scale = 3.0
+script = ExtResource("4_b8r8p")
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
 position = Vector2(0, -4)
