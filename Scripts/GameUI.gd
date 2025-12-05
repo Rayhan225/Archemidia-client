@@ -420,7 +420,7 @@ func start_placement_mode(type):
 	if type == "Bonfire":
 		path = "res://Assets/Bonfire_02-Sheet.png"
 	elif type == "Fence":
-		path = "$Sprite2D"
+		path = "res://Assets/FENCE 1 - DAY.png"
 	
 	if ResourceLoader.exists(path):
 		var tex = load(path)

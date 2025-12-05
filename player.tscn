@@ -380,3 +380,13 @@ editor_draw_limits = true
 position = Vector2(0, -9)
 scale = Vector2(0.5, 0.5)
 shape = SubResource("CapsuleShape2D_dw050")
+
+# --- NEW: Held Item Sprite ---
+[node name="HandContainer" type="Node2D" parent="."]
+position = Vector2(0, -10) # Adjust based on character height
+
+[node name="HeldItem" type="Sprite2D" parent="HandContainer"]
+visible = false
+position = Vector2(8, 0) # Offset to side
+scale = Vector2(0.5, 0.5)
+# Texture will be set by script

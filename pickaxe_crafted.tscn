@@ -1,14 +1,26 @@
-[gd_scene load_steps=3 format=3 uid="uid://cuys1oyi32ebk"]
+[gd_scene load_steps=4 format=3 uid="uid://cuys1oyi32ebk"]
 
-[ext_resource type="Texture2D" uid="uid://c745uvhsiyl6a" path="res://Assets/pickaxe-iron.png" id="1_gq1q5"]
+[ext_resource type="Texture2D" uid="uid://dcgypciexo055" path="res://Assets/AllTools XL- SnowHex.png" id="2_28gmr"]
 [ext_resource type="Script" uid="uid://cxv47io8btbkf" path="res://Scripts/ItemDrop.gd" id="2_script"]
 
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_28gmr"]
+a = Vector2(11.999999, -11)
+b = Vector2(-35, 23.000002)
+
 [node name="pickaxe_crafted" type="Area2D"]
-scale = Vector2(0.3, 0.3)
+y_sort_enabled = true
 script = ExtResource("2_script")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-rotation = -0.36651915
-scale = Vector2(0.25, 0.25)
-texture = ExtResource("1_gq1q5")
-offset = Vector2(1.685, -0.86)
+position = Vector2(-3.8146973e-06, 3.8146973e-06)
+rotation = 0.16580628
+scale = Vector2(0.09, 0.09)
+texture = ExtResource("2_28gmr")
+offset = Vector2(120, -120)
+region_enabled = true
+region_rect = Rect2(3240, 2220, 600, 600)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-3, -1)
+rotation = 3.1415927
+shape = SubResource("SegmentShape2D_28gmr")
