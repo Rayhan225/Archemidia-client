@@ -43,6 +43,8 @@ func set_item(d):
 		if d["name"] == "Crafting Table": p = "res://Assets/Crafting Table.png"
 		elif d["name"] == "Rope": p = "res://Assets/icons/Rope.png"
 		elif d["name"] == "Pickaxe": p = "res://Assets/icons/pickaxe-icon.png"
+		elif d["name"] == "Bonfire": p = "res://Assets/Bonfire_02-Sheet.png"
+		elif d["name"] == "Fence": p= "res://Assets/FENCE 1 - DAY.png"
 		
 		if not ResourceLoader.exists(p):
 			p = "res://Assets/icons/" + d["name"] + ".png"

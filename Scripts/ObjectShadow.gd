@@ -16,14 +16,15 @@ var stretch_power = 4.5
 var width_multiplier = 1.0   
 var skew_strength = 3.0   
 
+# Track if we are inside a CanvasGroup (ShadowLayer) to handle transparency correctly
+var is_in_canvas_group = false
+
 func _ready():
 	# [OPTIMIZATION] Create Notifier to cull off-screen logic
 	notifier = VisibleOnScreenNotifier2D.new()
-	# Set a reasonable bounding box (e.g., 64x64)
 	notifier.rect = Rect2(-32, -32, 64, 64)
 	add_child(notifier)
 	
-	# Connect signals
 	notifier.screen_entered.connect(_on_screen_entered)
 	notifier.screen_exited.connect(_on_screen_exited)
 	
@@ -41,7 +42,6 @@ func _ready():
 	else:
 		set_process(false)
 	
-	# Start disabled until entered screen
 	set_process(false) 
 	if shadow_sprite: shadow_sprite.visible = false
 
@@ -69,12 +69,16 @@ func create_shadow_duplicate():
 		shadow_sprite.centered = target_sprite.centered
 	shadow_sprite.offset = target_sprite.offset
 	
-	shadow_sprite.modulate = Color(0, 0, 0, DAY_ALPHA) 
+	shadow_sprite.modulate = Color(0, 0, 0, 1) # Start opaque black
 	
-	# Attempt to add to ShadowLayer, else local
 	var layer = get_tree().root.find_child("ShadowLayer", true, false)
-	if layer: layer.add_child(shadow_sprite)
-	else: add_child(shadow_sprite)
+	if layer: 
+		layer.add_child(shadow_sprite)
+		# If ShadowLayer is a CanvasGroup, we want opaque sprites so they merge (collapse)
+		if layer is CanvasGroup:
+			is_in_canvas_group = true
+	else: 
+		add_child(shadow_sprite)
 	
 	get_parent().tree_exiting.connect(_on_parent_exiting)
 
@@ -82,13 +86,21 @@ func _on_parent_exiting():
 	if shadow_sprite: shadow_sprite.queue_free()
 
 func _process(delta):
-	# Validation check
 	if not is_instance_valid(target_sprite) or not is_instance_valid(get_parent()):
 		if shadow_sprite: shadow_sprite.queue_free()
 		queue_free()
 		return
 
 	if is_instance_valid(shadow_sprite):
+		# --- CRITICAL FIX: Check actual tree visibility ---
+		# If the fence connector (parent) is hidden by the script, this returns false
+		# and hides the shadow properly.
+		if not target_sprite.is_visible_in_tree():
+			shadow_sprite.visible = false
+			return
+		else:
+			shadow_sprite.visible = true
+
 		shadow_sprite.global_position = target_sprite.global_position + SHADOW_NUDGE
 		sync_visuals()
 		update_shadow_transform()
@@ -104,7 +116,9 @@ func sync_visuals():
 func update_shadow_transform():
 	var time = NetworkManager.game_time
 	
-	shadow_sprite.rotation = 0
+	# MATCH ROTATION of the target so shadow aligns with the object (e.g. diagonal fences)
+	shadow_sprite.global_rotation = target_sprite.global_rotation
+	
 	var skew_val = -(0.5 - time) * skew_strength
 	shadow_sprite.skew = skew_val
 	
@@ -117,15 +131,28 @@ func update_shadow_transform():
 	
 	var dynamic_length = flatten_y + (dist_from_noon * length_factor)
 	
+	# Apply transform
 	shadow_sprite.scale = Vector2(
 		target_sprite.scale.x * width_multiplier,
 		target_sprite.scale.y * dynamic_length * -1.0
 	)
 
-	var alpha = DAY_ALPHA
-	if time < 0.2 || time > 0.8:
-		alpha = NIGHT_ALPHA
-	
-	var current_color = shadow_sprite.modulate
-	current_color.a = alpha
-	shadow_sprite.modulate = current_color
+	# --- COLLAPSING SHADOWS LOGIC ---
+	if is_in_canvas_group:
+		# If in a CanvasGroup, we keep alpha at 1.0 so shadows merge (union) perfectly.
+		# We only modulate color if needed, but black is good for shadows.
+		shadow_sprite.modulate = Color(0,0,0,1)
+		
+		# Optional: If you want shadows to disappear entirely at night, 
+		# we would need to modulate the CanvasGroup itself or set visible=false here.
+		if time < 0.2 or time > 0.8:
+			shadow_sprite.visible = false
+	else:
+		# Fallback for standard non-merging shadows
+		var alpha = DAY_ALPHA
+		if time < 0.2 or time > 0.8:
+			alpha = NIGHT_ALPHA
+		
+		var current_color = shadow_sprite.modulate
+		current_color.a = alpha
+		shadow_sprite.modulate = current_color

@@ -1,0 +1,25 @@
+[gd_scene load_steps=4 format=3 uid="uid://7gd8wy8cfj1u"]
+
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="1_t0db1"]
+[ext_resource type="Texture2D" uid="uid://fbg3rnrkay3s" path="res://Assets/Fence's copiar.png" id="2_5bt2q"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2vpus"]
+size = Vector2(34, 4)
+
+[node name="mid_fence" type="StaticBody2D"]
+y_sort_enabled = true
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+scale = Vector2(0.5, 0.2)
+script = ExtResource("1_t0db1")
+target_sprite_path = NodePath("../Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_5bt2q")
+offset = Vector2(0, -6)
+region_enabled = true
+region_rect = Rect2(0, 32, 48, 16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -3)
+shape = SubResource("RectangleShape2D_2vpus")

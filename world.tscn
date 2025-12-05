@@ -25,6 +25,7 @@ texture_region_size = Vector2i(64, 64)
 0:0/next_alternative_id = 4
 0:0/0 = 0
 0:0/0/texture_origin = Vector2i(0, -16)
+0:0/0/modulate = Color(0.7882353, 0.7882353, 0.7882353, 1)
 0:0/0/terrain_set = 0
 0:0/0/terrain = 0
 0:0/0/terrains_peering_bit/right_corner = 0
@@ -48,14 +49,14 @@ texture = ExtResource("6_k3n1d")
 texture_region_size = Vector2i(64, 64)
 0:0/0 = 0
 0:0/0/texture_origin = Vector2i(0, -16)
-0:0/0/modulate = Color(0.89411765, 0.89411765, 0.89411765, 1)
+0:0/0/modulate = Color(0.7882353, 0.7882353, 0.7882353, 1)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2o6r5"]
 texture = ExtResource("7_2o6r5")
 texture_region_size = Vector2i(64, 64)
 0:0/0 = 0
 0:0/0/texture_origin = Vector2i(0, -16)
-0:0/0/modulate = Color(0.89492244, 0.89492244, 0.8949224, 1)
+0:0/0/modulate = Color(0.6789437, 0.6789437, 0.6789437, 1)
 
 [sub_resource type="TileSet" id="TileSet_pkg7o"]
 tile_shape = 1

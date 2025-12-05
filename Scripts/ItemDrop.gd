@@ -19,7 +19,8 @@ func _ready():
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
 	
-	if sprite.texture:
+	# Wait for sprite to be ready
+	if sprite and sprite.texture:
 		var outline = sprite.duplicate()
 		outline.modulate = Color(0, 0, 0, 1)
 		outline.show_behind_parent = true
@@ -27,22 +28,24 @@ func _ready():
 		outline.position = Vector2.ZERO
 		sprite.add_child(outline)
 	
-	var t = create_tween().set_loops()
-	t.tween_property(sprite, "position:y", -5, 1.0).set_trans(Tween.TRANS_SINE)
-	t.tween_property(sprite, "position:y", 0, 1.0).set_trans(Tween.TRANS_SINE)
+	if sprite:
+		var t = create_tween().set_loops()
+		t.tween_property(sprite, "position:y", -5, 1.0).set_trans(Tween.TRANS_SINE)
+		t.tween_property(sprite, "position:y", 0, 1.0).set_trans(Tween.TRANS_SINE)
 
 func setup(type):
 	item_name = type
+	# --- FIX: Guard Clause to prevent crash on Nil ---
+	if not sprite: return 
+	
 	var path = "res://assets/icons/" + item_name + ".png"
 	
-	# FIX: Ensure filename matches exactly including spaces
 	if item_name == "Rope": 
 		path = "res://Assets/icons/Rope.png" 
 		if not ResourceLoader.exists(path): path = "res://Assets/87.png"
 	elif item_name == "Pickaxe": 
 		path = "res://Assets/pickaxe-iron.png"
 	elif item_name == "Crafting Table": 
-		# Attempt "Crafting Table.png" (with space) first
 		path = "res://Assets/Crafting Table.png"
 		if not ResourceLoader.exists(path): 
 			path = "res://Assets/CraftingTable.png"
@@ -50,6 +53,9 @@ func setup(type):
 		path = "res://Assets/icons/Wood.png"
 	elif item_name == "Stone":
 		path = "res://Assets/icons/Stone.png"
+	# --- FIX: Explicitly handle Fence Texture ---
+	elif item_name == "Fence":
+		path = "res://Assets/FENCE 1 - DAY.png"
 
 	if ResourceLoader.exists(path): 
 		sprite.texture = load(path)

@@ -19,7 +19,7 @@ target_sprite_path = NodePath("../Sprite2D")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 material = SubResource("CanvasItemMaterial_6s6ed")
 texture = ExtResource("2_4kbdd")
-offset = Vector2(0, -10)
+offset = Vector2(0, -8)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -7)

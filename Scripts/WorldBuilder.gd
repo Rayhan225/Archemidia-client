@@ -33,6 +33,7 @@ var rope_drop_scene = preload("res://rope_drop.tscn")
 var pickaxe_drop_scene = preload("res://pickaxe_crafted.tscn")
 var table_drop_scene = preload("res://crafting_table_drop.tscn")
 var bonfire_drop_scene = preload("res://bonfire_drop.tscn")
+var fence_scene = preload("res://fence.tscn")
 
 # Coastline Overlay
 var coastline_overlay: Node2D
@@ -202,7 +203,7 @@ func update_chunks_progressive(cx, cy):
 			if target_chunk_center != current_center:
 				break
 
-func load_chunk(c, is_immediate: bool):
+func load_chunk(c, is_immediate):
 	loaded_chunks[c] = "loading"
 	var req = HTTPRequest.new();
 	add_child(req)
@@ -273,19 +274,8 @@ func render_chunk(d, cx, cy, is_immediate):
 			
 			var obj_type = ""
 			
-			# Deterministic Object Placement
-			if r < 0.025:
-				if isSnow: obj_type = "Snow Tree"
-				elif isDesert: 
-					if r < 0.008: obj_type = "Palm Tree"
-				else: obj_type = "Tree"
-			elif r > 0.025 and r < 0.035:
-				if isSnow: obj_type = "Snow Rock"
-				elif isDesert: obj_type = "Sand Rock"
-				else: obj_type = "Stone"
-			
-			if !isSnow and !isDesert and r > 0.035 and r < 0.045: obj_type = "Trunk"
-			if isDesert and r > 0.035 and r < 0.045: obj_type = "Cactus"
+			# --- FIX: Stop Client from spawning Solid Objects ---
+			# The Server is authoritative. Only spawn cosmetic "Grass" here.
 			if !isSnow and !isDesert and r > 0.045 and r < 0.3: obj_type = "Grass"
 			
 			if obj_type != "":
@@ -352,10 +342,10 @@ func _real_spawn_object(type, coord):
 	elif type == "Snow Rock": scene = load("res://snow_rock.tscn")
 	elif type == "Sand Rock": scene = load("res://sand_rock.tscn")
 	elif type == "Cactus": scene = load("res://cactus.tscn")
-	elif type == "Grass": scene = load("res://grass.tscn") 
 	elif type == "Trunk": scene = load("res://trunk.tscn")
 	elif type == "Crafting Table": scene = load("res://crafting_table.tscn")
 	elif type == "Bonfire": scene = load("res://bonfire.tscn")
+	elif type == "Fence": scene = fence_scene
 	
 	if !scene: return
 	var s = scene.instantiate()
@@ -368,6 +358,13 @@ func _real_spawn_object(type, coord):
 	if par:
 		par.add_child(s)
 		objects_by_coord[coord] = s
+		
+		# --- FENCE LOGIC: Trigger Connection Update ---
+		if type == "Fence":
+			if s.has_method("update_connections"):
+				# We defer connection updates to ensuring neighbors are spawned/ready
+				s.call_deferred("update_connections")
+				s.call_deferred("update_neighbors")
 		
 		var chunk_coord = Vector2i(floor(coord.x/float(CHUNK_SIZE)), floor(coord.y/float(CHUNK_SIZE)))
 		if not chunk_objects.has(chunk_coord): chunk_objects[chunk_coord] = []
@@ -412,7 +409,12 @@ func spawn_drops(drops_list, pos):
 			elif type == "Pickaxe": drop = pickaxe_drop_scene.instantiate()
 			elif type == "Crafting Table": drop = table_drop_scene.instantiate()
 			elif type == "Bonfire": drop = bonfire_drop_scene.instantiate()
+			# Fallback for Fence (just use ItemDrop logic)
+			elif type == "Fence": 
+				drop = item_drop_scene.instantiate()
+				if drop.has_method("setup"): drop.setup("Fence")
 			else: drop = item_drop_scene.instantiate() 
+			
 			if drop:
 				drop.position = pos + Vector2(randf_range(-15,15), randf_range(-15,15))
 				var par = get_node_or_null("../Objects")

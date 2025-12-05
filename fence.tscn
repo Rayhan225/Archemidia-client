@@ -1,0 +1,83 @@
+[gd_scene load_steps=6 format=3 uid="uid://bjel03jichrp7"]
+
+[ext_resource type="Script" uid="uid://ckgcrosb7ot8p" path="res://Scripts/Fence.gd" id="1_fence"]
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="2_shadow"]
+[ext_resource type="Texture2D" uid="uid://fbg3rnrkay3s" path="res://Assets/Fence's copiar.png" id="3_vm2af"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fence"]
+size = Vector2(4, 8)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vm2af"]
+size = Vector2(30.027826, 3.486092)
+
+[node name="Fence" type="StaticBody2D"]
+y_sort_enabled = true
+script = ExtResource("1_fence")
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+scale = Vector2(0.5, 0.2)
+script = ExtResource("2_shadow")
+target_sprite_path = NodePath("../Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("3_vm2af")
+offset = Vector2(0, -6)
+region_enabled = true
+region_rect = Rect2(16, 64, 16, 14)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+show_behind_parent = true
+position = Vector2(0, -4)
+shape = SubResource("RectangleShape2D_fence")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+visible = false
+y_sort_enabled = true
+
+[node name="ShadowGenerator" type="Node2D" parent="StaticBody2D"]
+scale = Vector2(0.55, 0.22000001)
+script = ExtResource("2_shadow")
+target_sprite_path = NodePath("../BarLeft")
+
+[node name="BarLeft" type="Sprite2D" parent="StaticBody2D"]
+show_behind_parent = true
+position = Vector2(-18, -6)
+rotation = 0.3403392
+scale = Vector2(1.1, 1.1)
+texture = ExtResource("3_vm2af")
+offset = Vector2(0, -6)
+flip_h = true
+region_enabled = true
+region_rect = Rect2(0, 32, 48, 16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
+position = Vector2(-16, -10)
+rotation = 0.32986724
+scale = Vector2(0.99999964, 0.99999964)
+shape = SubResource("RectangleShape2D_vm2af")
+
+[node name="StaticBody2D2" type="StaticBody2D" parent="."]
+visible = false
+y_sort_enabled = true
+
+[node name="BarUp" type="Sprite2D" parent="StaticBody2D2"]
+show_behind_parent = true
+position = Vector2(18, -6)
+rotation = -0.3403392
+scale = Vector2(1.1, 0.917)
+texture = ExtResource("3_vm2af")
+offset = Vector2(0, -6)
+flip_h = true
+region_enabled = true
+region_rect = Rect2(0, 32, 48, 16)
+
+[node name="ShadowGenerator" type="Node2D" parent="StaticBody2D2"]
+scale = Vector2(0.55, 0.22000001)
+script = ExtResource("2_shadow")
+target_sprite_path = NodePath("../BarUp")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2"]
+position = Vector2(17, -10)
+rotation = -0.32463124
+scale = Vector2(0.9999999, 0.9999999)
+shape = SubResource("RectangleShape2D_vm2af")

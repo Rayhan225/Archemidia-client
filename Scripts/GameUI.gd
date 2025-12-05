@@ -109,6 +109,7 @@ func show_pickup_notification(item_name, count):
 	if item_name == "Crafting Table": path = "res://Assets/Crafting Table.png"
 	elif item_name == "Pickaxe": path = "res://Assets/pickaxe-iron.png"
 	elif item_name == "Bonfire": path = "res://Assets/Bonfire_02-Sheet.png"
+	elif item_name == "Fence": path = "res://Assets/FENCE 1 - DAY.png"
 	
 	if ResourceLoader.exists(path):
 		icon.texture = load(path)
@@ -254,7 +255,7 @@ func create_hotbar_ui():
 		hotbar_container.add_child(s)
 		hotbar_slots.append(s)
 
-# [UPDATED] Create 2 Building Slots
+# [UPDATED] Create 3 Building Slots (Table, Bonfire, Fence)
 func create_building_slots():
 	# We need a VBox to hold them vertically on the left
 	var vbox = VBoxContainer.new()
@@ -262,7 +263,8 @@ func create_building_slots():
 	vbox.add_theme_constant_override("separation", 10)
 	inv_panel.add_child(vbox)
 	
-	for i in range(2):
+	# Increased from 2 to 3 slots
+	for i in range(3):
 		var s = slot_scene.instantiate()
 		s.custom_minimum_size = Vector2(80, 80)
 		s.connect("slot_selected", _on_slot_selected)
@@ -281,7 +283,7 @@ func create_remove_button():
 func create_crafting_ui():
 	crafting_window = Panel.new()
 	crafting_window.name = "CraftingWindow"
-	crafting_window.size = Vector2(300, 250)
+	crafting_window.size = Vector2(300, 320) # Made Taller
 	
 	var vp_size = get_viewport().get_visible_rect().size
 	crafting_window.position = (vp_size / 2) - (crafting_window.size / 2)
@@ -305,7 +307,7 @@ func create_crafting_ui():
 	# VBox for multiple buttons
 	var vbox = VBoxContainer.new()
 	vbox.position = Vector2(25, 50)
-	vbox.size = Vector2(250, 180)
+	vbox.size = Vector2(250, 240)
 	vbox.add_theme_constant_override("separation", 10)
 	crafting_window.add_child(vbox)
 	
@@ -317,18 +319,26 @@ func create_crafting_ui():
 	btn_pick.pressed.connect(func(): _craft_item("Pickaxe"))
 	vbox.add_child(btn_pick)
 	
-	# [NEW] Bonfire Button
+	# Bonfire Button
 	var btn_bonfire = Button.new()
 	btn_bonfire.text = "Craft Bonfire\n(10 Wood, 5 Stone)"
 	btn_bonfire.custom_minimum_size = Vector2(0, 50)
 	apply_craft_btn_style(btn_bonfire)
 	btn_bonfire.pressed.connect(func(): _craft_item("Bonfire"))
 	vbox.add_child(btn_bonfire)
+
+	# [NEW] Fence Button
+	var btn_fence = Button.new()
+	btn_fence.text = "Craft Fence\n(2 Wood)"
+	btn_fence.custom_minimum_size = Vector2(0, 50)
+	apply_craft_btn_style(btn_fence)
+	btn_fence.pressed.connect(func(): _craft_item("Fence"))
+	vbox.add_child(btn_fence)
 	
 	var hint = Label.new()
 	hint.text = "Press C to Close"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.position = Vector2(0, 220)
+	hint.position = Vector2(0, 290)
 	hint.size = Vector2(300, 20)
 	hint.modulate = Color(1, 1, 1, 0.5)
 	crafting_window.add_child(hint)
@@ -408,8 +418,9 @@ func start_placement_mode(type):
 	# Set Hologram Texture
 	var path = "res://Assets/Crafting Table.png"
 	if type == "Bonfire":
-		# Bonfire uses atlas
 		path = "res://Assets/Bonfire_02-Sheet.png"
+	elif type == "Fence":
+		path = "$Sprite2D"
 	
 	if ResourceLoader.exists(path):
 		var tex = load(path)
@@ -419,6 +430,9 @@ func start_placement_mode(type):
 			atlas.region = Rect2(0, 0, 32, 32)
 			hologram.texture = atlas
 			hologram.offset = Vector2(0, -12)
+		elif type == "Fence":
+			hologram.texture = tex
+			hologram.offset = Vector2(0, -16)
 		else:
 			hologram.texture = tex
 			hologram.offset = Vector2(0, -2)
@@ -438,6 +452,9 @@ func _confirm_placement():
 		
 		if world.is_tile_placeable(map_pos):
 			NetworkManager.send_place_object(placement_type, map_pos.x, map_pos.y)
+			# Only stop placement if you want them to pick it up again
+			# But for fences, user might want to drag-place. 
+			# For now, let's keep one click = one place logic
 			stop_placement_mode()
 
 func _on_server_message(data):
@@ -479,17 +496,16 @@ func update_inventory_display(items):
 	# Clear building slots
 	for s in building_slots: s.set_item(null)
 	
-	# [UPDATED] Assign Crafting Table and Bonfire to specific slots
+	# [UPDATED] Assign Buildings to Slots
 	var building_idx = 0
-	if items.has("Crafting Table") and items["Crafting Table"] > 0:
-		if building_idx < building_slots.size():
-			building_slots[building_idx].set_item({"name": "Crafting Table", "count": int(items["Crafting Table"])})
-			building_idx += 1
 	
-	if items.has("Bonfire") and items["Bonfire"] > 0:
-		if building_idx < building_slots.size():
-			building_slots[building_idx].set_item({"name": "Bonfire", "count": int(items["Bonfire"])})
-			building_idx += 1
+	var buildings = ["Crafting Table", "Bonfire", "Fence"]
+	
+	for b_name in buildings:
+		if items.has(b_name) and items[b_name] > 0:
+			if building_idx < building_slots.size():
+				building_slots[building_idx].set_item({"name": b_name, "count": int(items[b_name])})
+				building_idx += 1
 	
 	var current_slots = inv_grid.get_children()
 	while current_slots.size() < 16:
@@ -504,7 +520,8 @@ func update_inventory_display(items):
 	
 	var idx = 0
 	for k in items:
-		if k == "Crafting Table" or k == "Bonfire": continue 
+		# Skip buildings in main grid
+		if k == "Crafting Table" or k == "Bonfire" or k == "Fence": continue 
 		if idx < current_slots.size():
 			var item_data = {"name": k, "count": int(items[k])}
 			current_slots[idx].set_item(item_data)
@@ -532,7 +549,3 @@ func _on_remove_button_pressed():
 
 func _craft_item(recipe):
 	NetworkManager.send_craft_item(recipe)
-
-# Deprecated direct call, replaced by start_placement_mode
-func _place_building_at_mouse():
-	pass

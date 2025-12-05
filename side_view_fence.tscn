@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3 uid="uid://b0bvs0xuambul"]
+
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="1_32780"]
+[ext_resource type="Texture2D" uid="uid://fbg3rnrkay3s" path="res://Assets/Fence's copiar.png" id="2_gq24f"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_14ebv"]
+size = Vector2(4, 20)
+
+[node name="sideView_fence" type="StaticBody2D"]
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+scale = Vector2(0.5, 0.2)
+script = ExtResource("1_32780")
+target_sprite_path = NodePath("../Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_gq24f")
+offset = Vector2(0, -6)
+region_enabled = true
+region_rect = Rect2(0, 0, 16, 32)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -3)
+shape = SubResource("RectangleShape2D_14ebv")
