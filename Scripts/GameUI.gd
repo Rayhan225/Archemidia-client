@@ -7,8 +7,7 @@ extends CanvasLayer
 
 # UI Elements
 var crafting_window: Panel
-# [UPDATED] Building Slots Array
-var building_slots = [] 
+var building_slots = []
 var remove_button: Button 
 var slot_scene = preload("res://Slot.tscn")
 var selected_slot = null 
@@ -19,206 +18,282 @@ var hotbar_slots = []
 var active_hotbar_index = -1
 
 # Health Bar Elements
-var health_container: HBoxContainer
+var health_bar_container: PanelContainer
+var heart_nodes = []
 var heart_texture = preload("res://heart pixel art 16x16.png")
-var heart_clippers = [] 
+
+# Time & Day UI
+var time_label: Label
+var day_count = 1
+var last_game_time = 0.0
 
 # Pickup Notification
 var pickup_container: VBoxContainer
 var previous_inventory = {}
+var active_pickups = {}
 
-# [NEW] Placement Hologram
+# Placement Hologram
 var placement_mode = false
 var placement_type = ""
 var hologram: Sprite2D
 
 var was_i_pressed = false
 
+# Font Resource
+var pixel_font: FontFile = null 
+
+# --- STYLING CONSTANTS ---
+const COL_TEXT_MAIN = Color(0.98, 0.98, 0.95, 1.0) # Cream White
+const COL_TEXT_GOLD = Color(1.0, 0.9, 0.6, 1.0)    # Soft Gold (Hotbar numbers)
+const COL_OUTLINE = Color(0.05, 0.05, 0.05, 1.0)   # Near Black
+const OUTLINE_SIZE = 4
+
+# Item Categories
+const CAT_BUILDINGS = ["Fence", "Bonfire", "Crafting Table"]
+const CAT_WEAPONS = ["Sword", "Bow"]
+const CAT_TOOLS = ["Pickaxe"]
+
 func _ready():
 	NetworkManager.server_message_received.connect(_on_server_message)
+	
+	if ResourceLoader.exists("res://Assets/pixel.ttf"):
+		pixel_font = load("res://Assets/pixel.ttf")
 	
 	if inventory_window:
 		inventory_window.visible = false
 		if inv_grid: inv_grid.columns = 8
+		inventory_window.position.y -= 150 
 		
-	create_building_slots() # [UPDATED]
+	create_building_slots() 
 	create_remove_button()
 	create_crafting_ui()
 	create_hotbar_ui()
-	create_health_ui()
+	create_health_ui() 
 	create_pickup_ui() 
+	create_clock_ui() 
 	
-	# Create Hologram Node
 	hologram = Sprite2D.new()
-	hologram.modulate = Color(1, 1, 1, 0.5) # Transparent
-	hologram.z_index = 100 # Always on top
+	hologram.modulate = Color(1, 1, 1, 0.5) 
+	hologram.z_index = 100 
 	hologram.visible = false
-	# Add to World, not UI, so it follows camera properly
+	
 	var world = get_tree().root.find_child("World", true, false)
 	if world:
 		var objects = world.find_child("Objects", true, false)
 		if objects: objects.add_child(hologram)
 		else: world.add_child(hologram)
 	else:
-		add_child(hologram) # Fallback
+		add_child(hologram) 
 	
 	update_inventory_display({})
 	
 	var title = Label.new()
-	title.text = "Inventory"
+	title.text = "INVENTORY"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.position = Vector2(100, -50)
+	title.position = Vector2(100, -40)
 	title.size = Vector2(300, 30)
-	title.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	_apply_text_style(title) # Apply Style
+	if pixel_font: title.add_theme_font_override("font", pixel_font)
 	inventory_window.add_child(title)
+	
+	update_cursor_state()
+
+# --- HELPER: APPLY UNIFIED TEXT STYLE ---
+func _apply_text_style(lbl: Label, color: Color = COL_TEXT_MAIN):
+	lbl.add_theme_color_override("font_color", color)
+	lbl.add_theme_color_override("font_outline_color", COL_OUTLINE)
+	lbl.add_theme_constant_override("outline_size", OUTLINE_SIZE)
+	# Removing modulate to let font_color take full effect cleanly
+	lbl.modulate = Color(1, 1, 1, 1) 
+
+func update_cursor_state():
+	if inventory_window.visible or crafting_window.visible or placement_mode:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	else:
+		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+
+func create_clock_ui():
+	var panel = PanelContainer.new()
+	panel.name = "ClockPanel"
+	
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0.5)
+	style.set_corner_radius_all(5)
+	style.content_margin_left = 10
+	style.content_margin_right = 10
+	panel.add_theme_stylebox_override("panel", style)
+	
+	panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	panel.position = Vector2(10, 10) 
+	
+	time_label = Label.new()
+	time_label.text = "Day 1 - 06:00 AM"
+	time_label.add_theme_font_size_override("font_size", 16)
+	_apply_text_style(time_label) # Apply Style
+	if pixel_font: time_label.add_theme_font_override("font", pixel_font)
+	panel.add_child(time_label)
+	
+	add_child(panel)
+
+func update_clock(server_time):
+	if server_time < last_game_time and last_game_time > 0.8:
+		day_count += 1
+	last_game_time = server_time
+	
+	var total_minutes = int(server_time * 24 * 60)
+	var hours = int(total_minutes / 60)
+	var minutes = total_minutes % 60
+	
+	var period = "AM"
+	if hours >= 12:
+		period = "PM"
+	if hours > 12:
+		hours -= 12
+	if hours == 0:
+		hours = 12
+		
+	var time_str = "%02d:%02d %s" % [hours, minutes, period]
+	time_label.text = "Day %d - %s" % [day_count, time_str]
 
 func create_pickup_ui():
-	# Container on Right Center
 	pickup_container = VBoxContainer.new()
 	pickup_container.name = "PickupContainer"
-	# Anchor to Right Center (1, 0.5)
 	pickup_container.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
-	# Offset: -120 from right edge, 0 from vertical center
-	pickup_container.position.x -= 120 
-	# Ensure it grows from center
+	pickup_container.position.x = -10 
 	pickup_container.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	pickup_container.grow_vertical = Control.GROW_DIRECTION_BOTH
 	pickup_container.add_theme_constant_override("separation", 5)
 	add_child(pickup_container)
 
 func show_pickup_notification(item_name, count):
-	# Create notification panel
-	var panel = PanelContainer.new()
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0, 0, 0, 0.6)
-	style.set_corner_radius_all(5)
-	style.content_margin_left = 10; style.content_margin_right = 10
-	style.content_margin_top = 5; style.content_margin_bottom = 5
-	panel.add_theme_stylebox_override("panel", style)
-	
-	var hbox = HBoxContainer.new()
-	panel.add_child(hbox)
-	
-	# Icon
-	var icon = TextureRect.new()
-	icon.custom_minimum_size = Vector2(24, 24)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	
-	var path = "res://Assets/icons/" + item_name + ".png"
-	if item_name == "Crafting Table": path = "res://Assets/Crafting Table.png"
-	elif item_name == "Pickaxe": path = "res://Assets/pickaxe-iron.png"
-	elif item_name == "Bonfire": path = "res://Assets/Bonfire_02-Sheet.png"
-	elif item_name == "Fence": path = "res://Assets/FENCE 1 - DAY.png"
-	
-	if ResourceLoader.exists(path):
-		icon.texture = load(path)
-		# Special handling for Bonfire sprite sheet used as icon
-		if item_name == "Bonfire" and icon.texture:
-			var atlas = AtlasTexture.new()
-			atlas.atlas = icon.texture
-			atlas.region = Rect2(0, 0, 32, 32)
-			icon.texture = atlas
-	
-	hbox.add_child(icon)
-	
-	# Text
-	var lbl = Label.new()
-	# [FIX] Cast count to int for display
-	lbl.text = item_name + " x" + str(int(count))
-	lbl.add_theme_font_size_override("font_size", 12)
-	hbox.add_child(lbl)
-	
-	pickup_container.add_child(panel)
-	
-	# Animate and Destroy
-	var t = create_tween()
-	t.tween_interval(0.5) 
-	t.tween_property(panel, "modulate:a", 0.0, 0.5) 
-	t.tween_callback(panel.queue_free)
+	if active_pickups.has(item_name):
+		var info = active_pickups[item_name]
+		info.count += int(count)
+		var label = info.node.get_node("HBoxContainer/Label")
+		label.text = item_name + " x" + str(info.count)
+		
+		if info.tween: info.tween.kill()
+		
+		var icon = info.node.get_node("HBoxContainer/Icon")
+		var t_pop = create_tween()
+		t_pop.tween_property(icon, "scale", Vector2(1.4, 1.4), 0.1)
+		t_pop.tween_property(icon, "scale", Vector2(1.0, 1.0), 0.1)
+		
+		info.node.modulate.a = 1.0
+		
+		var t = create_tween()
+		t.tween_interval(2.5) 
+		t.tween_property(info.node, "modulate:a", 0.0, 0.5) 
+		t.tween_callback(func(): _remove_popup_data(item_name))
+		t.tween_callback(info.node.queue_free)
+		info.tween = t
+	else:
+		var panel = PanelContainer.new()
+		var style = StyleBoxFlat.new()
+		style.bg_color = Color(0, 0, 0, 0.6)
+		style.set_corner_radius_all(5)
+		panel.add_theme_stylebox_override("panel", style)
+		
+		var hbox = HBoxContainer.new()
+		hbox.name = "HBoxContainer"
+		panel.add_child(hbox)
+		
+		var icon = TextureRect.new()
+		icon.name = "Icon"
+		icon.custom_minimum_size = Vector2(24, 24)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.pivot_offset = Vector2(12, 12) 
+		
+		var path = "res://Assets/icons/" + item_name + ".png"
+		if item_name == "Crafting Table": path = "res://Assets/Crafting Table.png"
+		elif item_name == "Pickaxe": path = "res://Assets/pickaxe-iron.png"
+		elif item_name == "Bonfire": path = "res://Assets/Bonfire_02-Sheet.png"
+		elif item_name == "Fence": path = "res://Assets/FENCE 1 - DAY.png"
+		
+		if ResourceLoader.exists(path):
+			icon.texture = load(path)
+			if item_name == "Bonfire" and icon.texture:
+				var atlas = AtlasTexture.new()
+				atlas.atlas = icon.texture
+				atlas.region = Rect2(0, 0, 32, 32)
+				icon.texture = atlas
+		
+		hbox.add_child(icon)
+		
+		var lbl = Label.new()
+		lbl.name = "Label"
+		lbl.text = item_name + " x" + str(int(count))
+		lbl.add_theme_font_size_override("font_size", 12)
+		
+		# --- STYLE PICKUP ---
+		_apply_text_style(lbl)
+		if pixel_font: lbl.add_theme_font_override("font", pixel_font)
+		
+		hbox.add_child(lbl)
+		
+		pickup_container.add_child(panel)
+		
+		var t = create_tween()
+		t.tween_interval(2.5) 
+		t.tween_property(panel, "modulate:a", 0.0, 0.5) 
+		t.tween_callback(func(): _remove_popup_data(item_name)) 
+		t.tween_callback(panel.queue_free)
+		
+		active_pickups[item_name] = { "node": panel, "count": int(count), "tween": t }
+
+func _remove_popup_data(item_name):
+	if active_pickups.has(item_name):
+		active_pickups.erase(item_name)
 
 func create_health_ui():
-	health_container = HBoxContainer.new()
-	health_container.name = "HealthBar"
-	health_container.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	health_container.position.y += 10 
-	health_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	# [FIX] Separation 0 ensures slots touch perfectly
-	health_container.add_theme_constant_override("separation", 0)
-	add_child(health_container)
+	health_bar_container = PanelContainer.new()
+	health_bar_container.name = "HealthBarPanel"
+	
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0.5) 
+	style.set_corner_radius_all(5)
+	style.content_margin_left = 5
+	style.content_margin_right = 5
+	style.content_margin_top = 2
+	style.content_margin_bottom = 2
+	health_bar_container.add_theme_stylebox_override("panel", style)
+	
+	health_bar_container.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	health_bar_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	health_bar_container.offset_left = 0
+	health_bar_container.offset_right = 0
+	health_bar_container.position.y = 10
+	
+	add_child(health_bar_container)
+	
+	var hbox = HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 2) 
+	health_bar_container.add_child(hbox)
 	
 	for i in range(5):
-		var slot_bg = PanelContainer.new()
-		slot_bg.custom_minimum_size = Vector2(20, 20) 
-		
-		var style = StyleBoxFlat.new()
-		style.bg_color = Color(0, 0, 0, 0.5)
-		
-		# [FIX] Zero radius for perfect blending between slots
-		style.set_corner_radius_all(0)
-		style.border_width_left = 0
-		style.border_width_right = 0
-		style.border_width_top = 0
-		style.border_width_bottom = 0
-		
-		if i == 0:
-			# Round left edge of the first heart
-			style.corner_radius_top_left = 5
-			style.corner_radius_bottom_left = 5
-		elif i == 4:
-			# Round right edge of the last heart
-			style.corner_radius_top_right = 5
-			style.corner_radius_bottom_right = 5
-		
-		slot_bg.add_theme_stylebox_override("panel", style)
-		
-		var center = CenterContainer.new()
-		slot_bg.add_child(center)
-		
-		var clipper = Control.new()
-		clipper.custom_minimum_size = Vector2(16, 16) 
-		clipper.clip_contents = true 
-		# Ensure clipping happens from top (for top-down cut effect)
-		# Control nodes by default clip from top-left, we'll manipulate height
-		clipper.set_anchors_preset(Control.PRESET_BOTTOM_WIDE) 
-		center.add_child(clipper)
-		
-		var heart = TextureRect.new()
-		heart.texture = heart_texture
-		heart.custom_minimum_size = Vector2(16, 16)
-		heart.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		# Anchor to BOTTOM so when height reduces, top gets cut off
-		heart.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-		heart.position = Vector2.ZERO
-		clipper.add_child(heart)
-		
-		health_container.add_child(slot_bg)
-		heart_clippers.append(clipper)
+		var heart = TextureProgressBar.new()
+		heart.texture_progress = heart_texture
+		heart.fill_mode = TextureProgressBar.FILL_BOTTOM_TO_TOP
+		heart.min_value = 0
+		heart.max_value = 20 
+		heart.value = 20
+		heart.custom_minimum_size = Vector2(16, 16) 
+		hbox.add_child(heart)
+		heart_nodes.append(heart)
 
 func update_health_display(current_hp):
 	for i in range(5):
-		var clipper = heart_clippers[i]
+		var heart = heart_nodes[i]
 		var heart_min = i * 20
 		var heart_max = (i + 1) * 20
 		
-		# Set full size first
-		clipper.visible = true
-		clipper.custom_minimum_size.y = 16 
-		clipper.size.y = 16 # Force update
-		
 		if current_hp >= heart_max:
-			# Full Heart
-			clipper.custom_minimum_size.y = 16
+			heart.value = 20 
 		elif current_hp <= heart_min:
-			# Empty Heart 
-			clipper.visible = false 
-			clipper.custom_minimum_size.y = 16
+			heart.value = 0 
 		else:
-			# Partial Heart - Cut from Top
-			var local_hp = current_hp - heart_min
-			var percent = float(local_hp) / 20.0
-			# Reducing height clips the top part because sprite is anchored to bottom
-			clipper.custom_minimum_size.y = 16 * percent
+			heart.value = current_hp - heart_min
 
 func create_hotbar_ui():
 	var panel = PanelContainer.new()
@@ -238,35 +313,44 @@ func create_hotbar_ui():
 	hotbar_container.add_theme_constant_override("separation", 2)
 	panel.add_child(hotbar_container)
 	
-	for i in range(8):
+	for i in range(9):
 		var s = slot_scene.instantiate()
 		s.custom_minimum_size = Vector2(40, 40) 
 		s.name = "HotbarSlot_" + str(i+1)
+		s.connect("slot_selected", _on_hotbar_click.bind(i))
 		
 		var num_lbl = Label.new()
 		num_lbl.text = str(i + 1)
-		# [FIX] Anchor to Top Left
 		num_lbl.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		num_lbl.position = Vector2(2, 0)
 		num_lbl.add_theme_font_size_override("font_size", 8) 
-		num_lbl.modulate = Color(1, 1, 0.5, 0.8)
+		
+		# --- STYLE HOTBAR NUMBERS ---
+		_apply_text_style(num_lbl, COL_TEXT_GOLD)
+		if pixel_font: num_lbl.add_theme_font_override("font", pixel_font)
+		
 		s.add_child(num_lbl)
 		
 		hotbar_container.add_child(s)
 		hotbar_slots.append(s)
 
-# [UPDATED] Create 3 Building Slots (Table, Bonfire, Fence)
 func create_building_slots():
-	# We need a VBox to hold them vertically on the left
 	var vbox = VBoxContainer.new()
-	vbox.position = Vector2(-100, 20)
-	vbox.add_theme_constant_override("separation", 10)
+	vbox.position = Vector2(-140, 20) 
+	vbox.add_theme_constant_override("separation", 5)
 	inv_panel.add_child(vbox)
 	
-	# Increased from 2 to 3 slots
-	for i in range(3):
+	var lbl = Label.new()
+	lbl.text = "BUILDING"
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 10)
+	_apply_text_style(lbl, COL_TEXT_GOLD)
+	if pixel_font: lbl.add_theme_font_override("font", pixel_font)
+	vbox.add_child(lbl)
+	
+	for i in range(5):
 		var s = slot_scene.instantiate()
-		s.custom_minimum_size = Vector2(80, 80)
+		s.custom_minimum_size = Vector2(55, 55) 
 		s.connect("slot_selected", _on_slot_selected)
 		vbox.add_child(s)
 		building_slots.append(s)
@@ -275,7 +359,9 @@ func create_remove_button():
 	remove_button = Button.new()
 	remove_button.text = "X"
 	remove_button.size = Vector2(40, 40)
-	remove_button.position = Vector2(470, 150) 
+	remove_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	remove_button.position = Vector2(470, 250) 
+	
 	remove_button.pressed.connect(_on_remove_button_pressed)
 	remove_button.disabled = true
 	inv_panel.add_child(remove_button)
@@ -283,15 +369,14 @@ func create_remove_button():
 func create_crafting_ui():
 	crafting_window = Panel.new()
 	crafting_window.name = "CraftingWindow"
-	crafting_window.size = Vector2(300, 320) # Made Taller
+	crafting_window.size = Vector2(300, 320) 
 	
 	var vp_size = get_viewport().get_visible_rect().size
 	crafting_window.position = (vp_size / 2) - (crafting_window.size / 2)
 	crafting_window.visible = false
 	
-	# [FIX] Match Inventory UI Style
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0, 0, 0, 0.5) # Matches inventory/hotbar
+	style.bg_color = Color(0, 0, 0, 0.5) 
 	style.set_corner_radius_all(5)
 	crafting_window.add_theme_stylebox_override("panel", style)
 	add_child(crafting_window)
@@ -301,17 +386,18 @@ func create_crafting_ui():
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.position = Vector2(0, 10)
 	title.size = Vector2(300, 30)
-	title.modulate = Color(1, 0.84, 0)
+	
+	_apply_text_style(title, COL_TEXT_GOLD)
+	if pixel_font: title.add_theme_font_override("font", pixel_font)
+	
 	crafting_window.add_child(title)
 	
-	# VBox for multiple buttons
 	var vbox = VBoxContainer.new()
 	vbox.position = Vector2(25, 50)
 	vbox.size = Vector2(250, 240)
 	vbox.add_theme_constant_override("separation", 10)
 	crafting_window.add_child(vbox)
 	
-	# Pickaxe Button
 	var btn_pick = Button.new()
 	btn_pick.text = "Craft Pickaxe\n(3 Wood, 2 Stone, 1 Rope)"
 	btn_pick.custom_minimum_size = Vector2(0, 50)
@@ -319,7 +405,6 @@ func create_crafting_ui():
 	btn_pick.pressed.connect(func(): _craft_item("Pickaxe"))
 	vbox.add_child(btn_pick)
 	
-	# Bonfire Button
 	var btn_bonfire = Button.new()
 	btn_bonfire.text = "Craft Bonfire\n(10 Wood, 5 Stone)"
 	btn_bonfire.custom_minimum_size = Vector2(0, 50)
@@ -327,7 +412,6 @@ func create_crafting_ui():
 	btn_bonfire.pressed.connect(func(): _craft_item("Bonfire"))
 	vbox.add_child(btn_bonfire)
 
-	# [NEW] Fence Button
 	var btn_fence = Button.new()
 	btn_fence.text = "Craft Fence\n(2 Wood)"
 	btn_fence.custom_minimum_size = Vector2(0, 50)
@@ -340,7 +424,8 @@ func create_crafting_ui():
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.position = Vector2(0, 290)
 	hint.size = Vector2(300, 20)
-	hint.modulate = Color(1, 1, 1, 0.5)
+	_apply_text_style(hint)
+	if pixel_font: hint.add_theme_font_override("font", pixel_font)
 	crafting_window.add_child(hint)
 
 func apply_craft_btn_style(btn):
@@ -350,6 +435,9 @@ func apply_craft_btn_style(btn):
 	btn.add_theme_stylebox_override("normal", style)
 	btn.add_theme_stylebox_override("hover", style)
 	btn.add_theme_stylebox_override("pressed", style)
+	if pixel_font: btn.add_theme_font_override("font", pixel_font)
+	# Also style button text? Button uses internal label, hard to target directly without theme.
+	# But generally overrides propagate.
 
 func _process(delta):
 	if Input.is_key_pressed(KEY_I):
@@ -359,35 +447,56 @@ func _process(delta):
 	else:
 		was_i_pressed = false
 	
-	# [NEW] Handle Placement Mode Hologram
 	if placement_mode and hologram:
-		var mouse_pos = get_viewport().get_mouse_position()
 		var world = get_tree().root.find_child("TileMapLayer", true, false)
 		if world:
+			var mouse_pos = get_viewport().get_mouse_position()
 			var local_pos = world.to_local(get_viewport().canvas_transform.affine_inverse() * mouse_pos)
 			var map_pos = world.local_to_map(local_pos)
 			var snap_pos = world.map_to_local(map_pos)
+			
 			hologram.global_position = world.to_global(snap_pos)
 			
-			# Check Validity
 			if world.has_method("is_tile_placeable"):
 				if world.is_tile_placeable(map_pos):
-					hologram.modulate = Color(0, 1, 0, 0.6) # Green
+					hologram.modulate = Color(0, 1, 0, 0.6) 
 				else:
-					hologram.modulate = Color(1, 0, 0, 0.6) # Red
+					hologram.modulate = Color(1, 0, 0, 0.6) 
 
 func _input(event):
-	# Cancel Placement
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		if placement_mode:
 			stop_placement_mode()
 
-	if event is InputEventKey and event.pressed:
-		if event.keycode >= KEY_1 and event.keycode <= KEY_8:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode >= KEY_1 and event.keycode <= KEY_9:
 			var index = event.keycode - KEY_1
 			select_hotbar_slot(index)
+		elif event.keycode == KEY_H:
+			_unequip_all()
+
+func _unhandled_input(event):
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		if placement_mode:
+			_confirm_placement_at_hologram()
+
+func _unequip_all():
+	if active_hotbar_index != -1 and active_hotbar_index < hotbar_slots.size():
+		hotbar_slots[active_hotbar_index].deselect()
+	
+	active_hotbar_index = -1
+	stop_placement_mode()
+	
+	var player = get_tree().root.find_child("Player", true, false)
+	if player: player.unequip_item()
+	
+	update_cursor_state()
 
 func select_hotbar_slot(index):
+	if active_hotbar_index == index:
+		_unequip_current_slot()
+		return
+
 	if active_hotbar_index >= 0 and active_hotbar_index < hotbar_slots.size():
 		hotbar_slots[active_hotbar_index].deselect()
 	
@@ -395,32 +504,45 @@ func select_hotbar_slot(index):
 	var slot = hotbar_slots[index]
 	slot.select()
 	
-	var player = get_tree().root.find_child("Player", true, false)
-	if player and player.has_method("equip_item"):
-		if slot.data:
-			player.equip_item(slot.icon.texture)
+	stop_placement_mode() 
+	
+	if slot.data:
+		var item_name = slot.data["name"]
+		if item_name in CAT_BUILDINGS:
+			var player = get_tree().root.find_child("Player", true, false)
+			if player: player.unequip_item()
+			start_placement_mode(item_name)
 		else:
-			player.unequip_item()
+			var player = get_tree().root.find_child("Player", true, false)
+			if player: player.equip_item(slot.icon.texture)
+	else:
+		var player = get_tree().root.find_child("Player", true, false)
+		if player: player.unequip_item()
+	
+	update_cursor_state()
 
-func _unhandled_input(event):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		if placement_mode:
-			_confirm_placement()
-		# Check if clicked slot is a building slot
-		elif selected_slot in building_slots and selected_slot.data:
-			# Start placement mode instead of instant placing
-			start_placement_mode(selected_slot.data["name"])
+func _unequip_current_slot():
+	if active_hotbar_index != -1 and active_hotbar_index < hotbar_slots.size():
+		hotbar_slots[active_hotbar_index].deselect()
+	
+	active_hotbar_index = -1
+	stop_placement_mode()
+	
+	var player = get_tree().root.find_child("Player", true, false)
+	if player: player.unequip_item()
+	
+	update_cursor_state()
+
+func _on_hotbar_click(slot_ref, index):
+	select_hotbar_slot(index)
 
 func start_placement_mode(type):
 	placement_mode = true
 	placement_type = type
 	
-	# Set Hologram Texture
 	var path = "res://Assets/Crafting Table.png"
-	if type == "Bonfire":
-		path = "res://Assets/Bonfire_02-Sheet.png"
-	elif type == "Fence":
-		path = "res://Assets/FENCE 1 - DAY.png"
+	if type == "Bonfire": path = "res://Assets/Bonfire_02-Sheet.png"
+	elif type == "Fence": path = "res://Assets/FENCE 1 - DAY.png"
 	
 	if ResourceLoader.exists(path):
 		var tex = load(path)
@@ -438,24 +560,21 @@ func start_placement_mode(type):
 			hologram.offset = Vector2(0, -2)
 			
 	hologram.visible = true
+	update_cursor_state()
 
 func stop_placement_mode():
 	placement_mode = false
-	hologram.visible = false
+	if hologram: hologram.visible = false
+	update_cursor_state()
 
-func _confirm_placement():
+func _confirm_placement_at_hologram():
+	if !hologram or !hologram.visible: return
+	
 	var world = get_tree().root.find_child("TileMapLayer", true, false)
 	if world:
-		var mouse_pos = get_viewport().get_mouse_position()
-		var local_pos = world.to_local(get_viewport().canvas_transform.affine_inverse() * mouse_pos)
-		var map_pos = world.local_to_map(local_pos)
-		
+		var map_pos = world.local_to_map(world.to_local(hologram.global_position))
 		if world.is_tile_placeable(map_pos):
 			NetworkManager.send_place_object(placement_type, map_pos.x, map_pos.y)
-			# Only stop placement if you want them to pick it up again
-			# But for fences, user might want to drag-place. 
-			# For now, let's keep one click = one place logic
-			stop_placement_mode()
 
 func _on_server_message(data):
 	var event = data.get("event", "")
@@ -485,30 +604,35 @@ func toggle_inventory():
 	inventory_window.visible = !inventory_window.visible
 	if !inventory_window.visible: 
 		_on_slot_selected(null)
-	# Cancel placement if opening inventory
 	if placement_mode: stop_placement_mode()
+	update_cursor_state()
 
 func toggle_crafting(show):
 	crafting_window.visible = show
 	if show and placement_mode: stop_placement_mode()
+	update_cursor_state()
 
 func update_inventory_display(items):
-	# Clear building slots
+	for s in hotbar_slots:
+		if s.data:
+			var name = s.data["name"]
+			if items.has(name):
+				s.set_item({"name": name, "count": int(items[name])})
+			else:
+				s.set_item(null)
+				if s.is_selected: 
+					_unequip_current_slot()
+
 	for s in building_slots: s.set_item(null)
-	
-	# [UPDATED] Assign Buildings to Slots
-	var building_idx = 0
-	
-	var buildings = ["Crafting Table", "Bonfire", "Fence"]
-	
-	for b_name in buildings:
-		if items.has(b_name) and items[b_name] > 0:
-			if building_idx < building_slots.size():
-				building_slots[building_idx].set_item({"name": b_name, "count": int(items[b_name])})
-				building_idx += 1
-	
+	var build_idx = 0
+	for k in items:
+		if k in CAT_BUILDINGS:
+			if build_idx < building_slots.size():
+				building_slots[build_idx].set_item({"name": k, "count": int(items[k])})
+				build_idx += 1
+
 	var current_slots = inv_grid.get_children()
-	while current_slots.size() < 16:
+	while current_slots.size() < 24:
 		var s = slot_scene.instantiate()
 		s.custom_minimum_size = Vector2(60, 60)
 		s.connect("slot_selected", _on_slot_selected)
@@ -516,36 +640,36 @@ func update_inventory_display(items):
 		current_slots = inv_grid.get_children()
 	
 	for s in current_slots: s.set_item(null)
-	for i in range(8): hotbar_slots[i].set_item(null)
 	
-	var idx = 0
+	var main_idx = 0
 	for k in items:
-		# Skip buildings in main grid
-		if k == "Crafting Table" or k == "Bonfire" or k == "Fence": continue 
-		if idx < current_slots.size():
+		if k in CAT_BUILDINGS: continue
+		
+		if main_idx < current_slots.size():
 			var item_data = {"name": k, "count": int(items[k])}
-			current_slots[idx].set_item(item_data)
-			if idx < 8:
-				hotbar_slots[idx].set_item(item_data)
-			idx += 1
-	
-	if active_hotbar_index != -1:
-		select_hotbar_slot(active_hotbar_index)
+			current_slots[main_idx].set_item(item_data)
+			main_idx += 1
 
 func _on_slot_selected(slot):
+	if slot == null:
+		if selected_slot: selected_slot.deselect()
+		selected_slot = null
+		remove_button.disabled = true
+		return
+
 	if selected_slot and is_instance_valid(selected_slot) and selected_slot != slot:
 		selected_slot.deselect()
-	selected_slot = slot
 	
-	if selected_slot and selected_slot.data:
+	if slot.is_selected:
+		selected_slot = slot
 		remove_button.disabled = false
 	else:
-		remove_button.disabled = true
 		selected_slot = null
+		remove_button.disabled = true
 
 func _on_remove_button_pressed():
 	if selected_slot and selected_slot.data:
-		NetworkManager.send_remove_item(selected_slot.data["name"], 1)
+		NetworkManager.send_data({"action": "drop_item", "item": selected_slot.data["name"]})
 
 func _craft_item(recipe):
 	NetworkManager.send_craft_item(recipe)

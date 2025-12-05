@@ -8,7 +8,7 @@ var chunk_objects = {}
 var loaded_chunks = {}
 var last_player_chunk = Vector2i(-999, -999)
 
-# Spawn Queue (For background loading)
+# Spawn Queue
 var spawn_queue = [] 
 
 var objects_by_coord = {} 
@@ -21,7 +21,7 @@ const TILE_PIXEL_SIZE = 64
 const CHUNK_SIZE = 16
 const CHUNK_PIXEL_SIZE = TILE_PIXEL_SIZE * CHUNK_SIZE
 
-# --- Loading State Tracking ---
+# Loading State
 var target_chunk_center = Vector2i(-999, -999)
 var is_updating_chunks = false
 
@@ -43,7 +43,6 @@ func _ready():
 	if player_path: player = get_node(player_path)
 	else: player = get_tree().root.find_child("Player", true, false)
 	
-	# Create Overlay for Coastlines
 	coastline_overlay = Node2D.new()
 	coastline_overlay.name = "CoastlineOverlay"
 	coastline_overlay.z_index = -1
@@ -52,19 +51,14 @@ func _ready():
 	
 	if player:
 		var p = local_to_map(to_local(player.global_position))
-		# Initial Load
 		update_chunks_progressive(floor(p.x/float(CHUNK_SIZE)), floor(p.y/float(CHUNK_SIZE)))
 
-# Client-side placement check
 func is_tile_placeable(coord: Vector2i) -> bool:
-	# Check 1: Is there a manually placed object already?
 	if objects_by_coord.has(coord): 
 		var existing = objects_by_coord.get(coord)
 		if is_instance_valid(existing): return false
 	
-	# Check 2: Is it a Pond/Void?
 	if get_cell_source_id(coord) == -1: return false
-	
 	return true
 
 func _on_server_update(data):
@@ -82,16 +76,26 @@ func _on_server_update(data):
 			if data.get("destroyed", false):
 				m.destroy()
 				active_monsters.erase(id)
-				spawn_drops(data.get("drops", []), m.position)
+				# False = Natural Drop (Instant pickup)
+				spawn_drops(data.get("drops", []), m.position, false)
+				
 	elif data.get("event") == "object_removed":
 		var coord = Vector2i(data.get("x", 0), data.get("y", 0))
 		remove_object_at(coord, data.get("drops", []))
+		
 	elif data.get("event") == "object_hit":
 		var coord = Vector2i(data.get("x", 0), data.get("y", 0))
 		hit_object_at(coord, data.get("drops", []))
+		
 	elif data.get("event") == "object_placed":
 		var coord = Vector2i(data.get("x", 0), data.get("y", 0))
 		_real_spawn_object(data.get("type", ""), coord)
+
+	# --- NEW: HANDLE ITEM DROPS (FROM INVENTORY) ---
+	elif data.get("event") == "item_spawn":
+		var drop_pos = Vector2(data.get("x", 0), data.get("y", 0))
+		# True = Dropped by Player (Enforce distance rule)
+		spawn_drops(data.get("drops", []), drop_pos, true)
 
 func sync_world_objects(list):
 	for o in list:
@@ -124,7 +128,6 @@ func update_monsters(monster_list):
 		active_monsters.erase(id)
 
 func _process(delta):
-	# Process Background Queue
 	var start_time = Time.get_ticks_msec()
 	while not spawn_queue.is_empty():
 		if Time.get_ticks_msec() - start_time > 3: 
@@ -144,7 +147,6 @@ func _process(delta):
 		update_chunks_progressive(current_chunk.x, current_chunk.y)
 		coastline_overlay.queue_redraw()
 
-# --- HYBRID LOADING SYSTEM ---
 func update_chunks_progressive(cx, cy):
 	target_chunk_center = Vector2i(cx, cy)
 	
@@ -232,11 +234,9 @@ func _on_chunk(c, req, code, body, is_immediate):
 	loaded_chunks[c] = true
 	req.queue_free()
 
-# --- FIX: DETERMINISTIC RANDOM FUNCTION (Matches Java Server) ---
 func get_hash_noise(x: int, y: int) -> float:
 	var seed_val = 12345
 	var n = x * 331 + y * 433 + seed_val
-	# Bitwise mixing to match Java logic
 	n = (n << 13) ^ n
 	n = (n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff
 	return float(n) / 2147483647.0
@@ -244,7 +244,6 @@ func get_hash_noise(x: int, y: int) -> float:
 func render_chunk(d, cx, cy, is_immediate):
 	var ox = cx*16;
 	var oy = cy*16
-	
 	var batch_objects = []
 	
 	for y in range(d.size()): 
@@ -256,26 +255,18 @@ func render_chunk(d, cx, cy, is_immediate):
 				set_cell(c, -1)
 				continue
 				
-			# Render Terrain Tiles
-			if tile_id == 0: set_cell(c, 3, Vector2i(0,0), 0)   # Grass
-			elif tile_id == 2: set_cell(c, 6, Vector2i(0,0), 0) # Snow
-			elif tile_id == 1: set_cell(c, 5, Vector2i(0,0), 0) # Sand
+			if tile_id == 0: set_cell(c, 3, Vector2i(0,0), 0)   
+			elif tile_id == 2: set_cell(c, 6, Vector2i(0,0), 0) 
+			elif tile_id == 1: set_cell(c, 5, Vector2i(0,0), 0) 
 			
 			if c.x == 0 and c.y == 0: continue
 
-			# --- FIX: USE HASH NOISE INSTEAD OF NOISE/SIN ---
-			# Use exactly same noise function as Java Server
 			var r = get_hash_noise(c.x, c.y)
-			
-			# Biome thresholds with noise
 			var boundary_noise = (get_hash_noise(c.x, 0) - 0.5) * 10.0
 			var isSnow = c.y < -30 + boundary_noise
 			var isDesert = c.y > 30 + boundary_noise
-			
 			var obj_type = ""
 			
-			# --- FIX: Stop Client from spawning Solid Objects ---
-			# The Server is authoritative. Only spawn cosmetic "Grass" here.
 			if !isSnow and !isDesert and r > 0.045 and r < 0.3: obj_type = "Grass"
 			
 			if obj_type != "":
@@ -322,7 +313,6 @@ func _draw_coastlines():
 
 func is_tile_empty(c):
 	var chunk_c = Vector2i(floor(c.x/float(CHUNK_SIZE)), floor(c.y/float(CHUNK_SIZE)))
-	
 	if loaded_chunks.has(chunk_c):
 		return get_cell_source_id(c) == -1
 	else:
@@ -359,10 +349,8 @@ func _real_spawn_object(type, coord):
 		par.add_child(s)
 		objects_by_coord[coord] = s
 		
-		# --- FENCE LOGIC: Trigger Connection Update ---
 		if type == "Fence":
 			if s.has_method("update_connections"):
-				# We defer connection updates to ensuring neighbors are spawned/ready
 				s.call_deferred("update_connections")
 				s.call_deferred("update_neighbors")
 		
@@ -381,7 +369,13 @@ func remove_object_at(coord, drops_list):
 		poof.position = target.position
 		get_parent().add_child(poof)
 		poof.emitting = true
-		spawn_drops(drops_list, target.position)
+		
+		# False = Natural Drop
+		spawn_drops(drops_list, target.position, false)
+		
+		if target.has_method("propagate_update"):
+			target.propagate_update()
+			
 		objects_by_coord.erase(coord)
 		target.queue_free()
 
@@ -395,9 +389,11 @@ func hit_object_at(coord, drops_list):
 			s.modulate = Color(10,10,10)
 			t.tween_property(s, "modulate", Color(1,1,1), 0.1)
 			if player and player.has_method("apply_shake"): player.apply_shake(1.0)
-		spawn_drops(drops_list, target.position)
+		# False = Natural Drop
+		spawn_drops(drops_list, target.position, false)
 
-func spawn_drops(drops_list, pos):
+# --- UPDATED: Accepts Player Drop Flag ---
+func spawn_drops(drops_list, pos, is_player_drop=false):
 	for d in drops_list:
 		var type = d["type"]
 		var amount = int(d["amount"])
@@ -409,14 +405,16 @@ func spawn_drops(drops_list, pos):
 			elif type == "Pickaxe": drop = pickaxe_drop_scene.instantiate()
 			elif type == "Crafting Table": drop = table_drop_scene.instantiate()
 			elif type == "Bonfire": drop = bonfire_drop_scene.instantiate()
-			# Fallback for Fence (just use ItemDrop logic)
 			elif type == "Fence": 
 				drop = item_drop_scene.instantiate()
-				if drop.has_method("setup"): drop.setup("Fence")
+				if drop.has_method("setup"): drop.setup("Fence", is_player_drop)
 			else: drop = item_drop_scene.instantiate() 
 			
 			if drop:
 				drop.position = pos + Vector2(randf_range(-15,15), randf_range(-15,15))
 				var par = get_node_or_null("../Objects")
 				if par: par.add_child(drop)
-				if drop.has_method("setup"): drop.setup(type)
+				
+				# Pass the flag to setup
+				if drop.has_method("setup"): 
+					drop.setup(type, is_player_drop)

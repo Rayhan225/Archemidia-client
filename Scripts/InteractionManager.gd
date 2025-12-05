@@ -11,6 +11,7 @@ var c_was_pressed = false
 func _ready():
 	NetworkManager.server_message_received.connect(_on_server_event)
 	game_ui = get_node_or_null("../GameUI")
+	# Fallback search if path fails
 	if not game_ui:
 		game_ui = get_tree().root.find_child("GameUI", true, false)
 
@@ -18,47 +19,65 @@ func _process(delta):
 	handle_hover_logic()
 	handle_input_logic()
 
-# --- FIX: Remove Mouse Click Interaction ---
-# Interaction logic is now completely keyboard based (Space/C)
-# func _unhandled_input(event) -> Removed
-
 func handle_input_logic():
+	# --- C Key: Crafting UI ---
 	if Input.is_key_pressed(KEY_C):
 		if not c_was_pressed:
-			if game_ui and game_ui.crafting_window.visible:
-				game_ui.toggle_crafting(false)
-			else:
-				if is_instance_valid(hovered_object):
+			if game_ui:
+				# 1. If UI is already open, close it
+				if game_ui.crafting_window.visible:
+					game_ui.toggle_crafting(false)
+				
+				# 2. Open Condition: Facing Table + Empty Hands
+				elif is_instance_valid(hovered_object):
 					var name_lower = hovered_object.name.to_lower()
-					if "table" in name_lower or "crafting" in name_lower:
+					
+					# [FIX] Check for both space and underscore names
+					var is_table = "crafting table" in name_lower or "crafting_table" in name_lower
+					
+					# Check if it is a Crafting Table AND Hands are Empty (index -1)
+					if is_table and game_ui.active_hotbar_index == -1:
 						game_ui.toggle_crafting(true)
+						
 		c_was_pressed = true
 	else:
 		c_was_pressed = false
 
+	# --- Space Key: Attack / Interact / Pickup ---
 	if Input.is_key_pressed(KEY_SPACE):
 		if not space_was_pressed:
+			# 1. Prioritize Monsters
 			var monster_hit = false
 			if world_builder.active_monsters.size() > 0:
 				for id in world_builder.active_monsters:
 					var m = world_builder.active_monsters[id]
-					if is_instance_valid(m) and player.global_position.distance_to(m.global_position) < 80:
+					if is_instance_valid(m) and player.global_position.distance_to(m.global_position) < 50:
 						attempt_interaction(m)
 						monster_hit = true
 						break
 			
+			# 2. If no monster, interact with object
 			if not monster_hit:
 				if is_instance_valid(hovered_object):
 					var name_lower = hovered_object.name.to_lower()
-					if "table" in name_lower or "crafting" in name_lower:
+					
+					# Check for pickup-able buildings logic
+					# [FIX] Robust check for various naming conventions
+					var is_building = "table" in name_lower or "bonfire" in name_lower or "fence" in name_lower
+					
+					if is_building:
+						# If holding Space on a building -> Pickup
 						var obj_pos = world_builder.to_local(hovered_object.global_position)
 						var coord = world_builder.local_to_map(obj_pos)
 						NetworkManager.send_pickup_object(coord.x, coord.y)
+						# Ensure UI closes if we picked up the table
 						if game_ui: game_ui.toggle_crafting(false)
 					else:
+						# Standard interact (Hit/Harvest)
 						attempt_interaction(hovered_object)
 				else:
-					var p_tile = world_builder.local_to_map(world_builder.to_local(player.global_position))
+					# 3. Fallback: Interact with tile in front
+					var p_tile = get_facing_tile_coord()
 					NetworkManager.send_data({ "action": "interact", "x": p_tile.x, "y": p_tile.y })
 
 		space_was_pressed = true
@@ -97,36 +116,35 @@ func _on_server_event(data):
 	elif event == "object_placed":
 		world_builder.spawn_object(data.get("type", ""), coord)
 
+func get_facing_tile_coord() -> Vector2i:
+	if not is_instance_valid(player) or not world_builder: return Vector2i.ZERO
+	
+	var player_map = world_builder.local_to_map(world_builder.to_local(player.global_position))
+	
+	var facing = Vector2i.DOWN
+	if player.facing_dir == "up": facing = Vector2i.UP
+	elif player.facing_dir == "side":
+		if player.sprite.flip_h: facing = Vector2i.LEFT
+		else: facing = Vector2i.RIGHT
+	
+	return player_map + facing
+
 func handle_hover_logic():
 	if not is_instance_valid(player) or not world_builder: return
 	
-	# Keep highlighting based on mouse simply to show what Space will interact with
-	var mouse_pos = get_global_mouse_position()
 	var found_obj = null
+	var target_coord = get_facing_tile_coord()
 	
-	# Priority 1: Monsters
-	if world_builder.get("active_monsters"):
-		for id in world_builder.active_monsters:
-			var m = world_builder.active_monsters[id]
-			if is_instance_valid(m):
-				if m.global_position.distance_to(mouse_pos) < 20:
-					found_obj = m
-					break
+	# Check facing tile
+	var obj = world_builder.objects_by_coord.get(target_coord, null)
 	
-	# Priority 2: Objects at Mouse
-	if not found_obj:
-		var map_pos = world_builder.local_to_map(world_builder.to_local(mouse_pos))
-		var obj = world_builder.objects_by_coord.get(map_pos, null)
-		if obj and not "Grass" in obj.name:
-			found_obj = obj
-	
-	# Priority 3: Objects near Player (Auto-select)
-	if not found_obj:
-		var player_center = player.global_position + Vector2(0, -8)
-		var player_map = world_builder.local_to_map(world_builder.to_local(player_center))
-		var obj = world_builder.objects_by_coord.get(player_map, null)
-		if obj and not "Grass" in obj.name:
-			found_obj = obj
+	# Check feet if facing is empty (allows interacting while standing on something)
+	if not obj:
+		var feet_coord = world_builder.local_to_map(world_builder.to_local(player.global_position))
+		obj = world_builder.objects_by_coord.get(feet_coord, null)
+
+	if obj and not "Grass" in obj.name:
+		found_obj = obj
 
 	if is_instance_valid(hovered_object) and hovered_object != found_obj:
 		reset_highlight(hovered_object)
