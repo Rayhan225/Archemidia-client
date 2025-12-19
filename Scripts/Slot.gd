@@ -42,6 +42,7 @@ func set_item(d):
 		if d["name"] == "Crafting Table": p = "res://Assets/Crafting Table.png"
 		elif d["name"] == "Rope": p = "res://Assets/icons/Rope.png"
 		elif d["name"] == "Pickaxe": p = "res://Assets/pickaxe-iron.png"
+		elif d["name"] == "Hoe": p = "res://Assets/Hoe.png"
 		elif d["name"] == "Bonfire": p = "res://Assets/Bonfire_02-Sheet.png"
 		elif d["name"] == "Fence": p = "res://Assets/FENCE 1 - DAY.png"
 		elif d["name"] == "Wood": p = "res://Assets/icons/Wood.png"

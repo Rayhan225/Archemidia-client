@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3 uid="uid://dqogh50fb8hsn"]
+
+[ext_resource type="Texture2D" uid="uid://by3745yapq0ro" path="res://Assets/Hoe.png" id="1_c1l0d"]
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_28gmr"]
+a = Vector2(48.484837, -33.333332)
+b = Vector2(-24.242424, 18.181822)
+
+[node name="hoe_crafted" type="Area2D"]
+y_sort_enabled = true
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-3.8146973e-06, 3.8146973e-06)
+rotation = 0.16580628
+scale = Vector2(1.2, 1.2)
+texture = ExtResource("1_c1l0d")
+offset = Vector2(7, -6)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(10.999999, -7.999999)
+rotation = 3.1415927
+scale = Vector2(0.33, 0.33)
+shape = SubResource("SegmentShape2D_28gmr")

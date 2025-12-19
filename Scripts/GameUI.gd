@@ -51,7 +51,7 @@ const OUTLINE_SIZE = 4
 # Item Categories
 const CAT_BUILDINGS = ["Fence", "Bonfire", "Crafting Table"]
 const CAT_WEAPONS = ["Sword", "Bow"]
-const CAT_TOOLS = ["Pickaxe"]
+const CAT_TOOLS = ["Pickaxe", "Hoe"]
 
 func _ready():
 	NetworkManager.server_message_received.connect(_on_server_message)
@@ -208,6 +208,7 @@ func show_pickup_notification(item_name, count):
 		var path = "res://Assets/icons/" + item_name + ".png"
 		if item_name == "Crafting Table": path = "res://Assets/Crafting Table.png"
 		elif item_name == "Pickaxe": path = "res://Assets/pickaxe-iron.png"
+		elif item_name == "Hoe": path = "res://Assets/Hoe.png"
 		elif item_name == "Bonfire": path = "res://Assets/Bonfire_02-Sheet.png"
 		elif item_name == "Fence": path = "res://Assets/FENCE 1 - DAY.png"
 		
@@ -404,6 +405,13 @@ func create_crafting_ui():
 	apply_craft_btn_style(btn_pick)
 	btn_pick.pressed.connect(func(): _craft_item("Pickaxe"))
 	vbox.add_child(btn_pick)
+	
+	var btn_hoe = Button.new()
+	btn_hoe.text = "Craft Hoe\n(2 Wood, 2 Stone, 1 Rope)"
+	btn_hoe.custom_minimum_size = Vector2(0, 50)
+	apply_craft_btn_style(btn_hoe)
+	btn_hoe.pressed.connect(func(): _craft_item("Hoe"))
+	vbox.add_child(btn_hoe)
 	
 	var btn_bonfire = Button.new()
 	btn_bonfire.text = "Craft Bonfire\n(10 Wood, 5 Stone)"

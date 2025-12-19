@@ -2,6 +2,8 @@ extends CharacterBody2D
 
 const SPEED = 100.0
 const PICKAXE_SCENE = preload("res://pickaxe_crafted.tscn")
+const HOE_SCENE = preload("res://hoe_crafted.tscn")
+const FLOATING_TEXT_SCENE = preload("res://floating_text.tscn")
 
 @onready var sprite = $AnimatedSprite2D
 @onready var camera = $Camera2D
@@ -37,8 +39,12 @@ func _ready():
 	hand_sprite.name = "HandSprite"
 	add_child(hand_sprite)
 	hand_sprite.scale = Vector2(0.6, 0.6)
-	hand_sprite.z_index = 1
-	base_hand_pos = Vector2(6, 4) 
+	
+	# Keep Z=0 so shadows (Z=1) draw over it
+	hand_sprite.z_index = 0
+	
+	# Initial Position
+	base_hand_pos = Vector2(6, -10) 
 	hand_sprite.position = base_hand_pos
 	
 	sprite.animation_finished.connect(_on_animation_finished)
@@ -111,26 +117,28 @@ func update_facing_direction(dir: Vector2):
 	if dir.y < 0: # UP
 		facing_dir = "up"
 		sprite.flip_h = false
-		hand_sprite.z_index = -1 
-		base_hand_pos = Vector2(4, -6)
+		hand_sprite.show_behind_parent = true 
+		base_hand_pos = Vector2(6, -22) 
 		hand_sprite.scale.x = 0.6
+		
 	elif dir.y > 0: # DOWN
 		facing_dir = "down"
 		sprite.flip_h = false
-		hand_sprite.z_index = 1 
-		base_hand_pos = Vector2(6, 4)
+		hand_sprite.show_behind_parent = false
+		base_hand_pos = Vector2(6, -10)
 		hand_sprite.scale.x = 0.6
+		
 	elif dir.x != 0: # SIDE
 		facing_dir = "side"
 		sprite.flip_h = (dir.x < 0)
-		hand_sprite.z_index = 1
+		hand_sprite.show_behind_parent = false
 		
 		if dir.x < 0: # LEFT
-			base_hand_pos = Vector2(-8, 2)
+			base_hand_pos = Vector2(-10, -14)
 			hand_sprite.scale.x = -0.6 
 			if not is_attacking: hand_sprite.rotation = deg_to_rad(-15) 
 		else: # RIGHT
-			base_hand_pos = Vector2(8, 2)
+			base_hand_pos = Vector2(10, -14)
 			hand_sprite.scale.x = 0.6
 			if not is_attacking: hand_sprite.rotation = deg_to_rad(15)
 
@@ -142,112 +150,198 @@ func attack():
 	is_attacking = true
 	play_anim("hit")
 	
-	# --- RANGE CONFIGURATION ---
-	var base_reach = 35.0
-	var max_reach = 35.0 
-	var has_pickaxe = false
-
-	# Check if Pickaxe is equipped
-	if hand_sprite.get_child_count() > 0:
-		has_pickaxe = true
-	elif hand_sprite.texture:
-		var path = hand_sprite.texture.resource_path.to_lower()
-		if "pickaxe" in path or "tool" in path:
-			has_pickaxe = true
-
-	if has_pickaxe:
-		max_reach = 70.0 # Slightly decreased from 80.0
-
-	create_hand_swipe(max_reach)
+	# --- DETECT TOOL TYPE ---
+	var is_pickaxe = false
+	var is_hoe = false
 	
+	if hand_sprite.get_child_count() > 0:
+		var tool_node = hand_sprite.get_child(0)
+		if "Pickaxe" in tool_node.name: is_pickaxe = true
+		elif "Hoe" in tool_node.name: is_hoe = true
+	
+	# --- REACH ---
+	var reach = 35.0
+	if is_pickaxe: reach = 70.0 
+	elif is_hoe: reach = 50.0 
+	
+	# --- COLORS ---
+	var slash_color = Color(0.7, 0.6, 0.0, 1.0) # Gold
+	if is_hoe: slash_color = Color(0.9, 1.0, 1.0, 1.0) # Bright Cyan/White
+	
+	create_hand_swipe(reach, slash_color, is_hoe)
+
+	# --- DIRECTION VECTOR ---
 	var dir_vec = Vector2.DOWN
 	if facing_dir == "up": dir_vec = Vector2.UP
 	elif facing_dir == "side":
 		if sprite.flip_h: dir_vec = Vector2.LEFT
 		else: dir_vec = Vector2.RIGHT
-	
-	# --- IMPROVED HIT DETECTION: Base to Tip ---
-	# We check points along the attack line to ensure we don't miss close enemies
-	var points_to_check = [base_reach]
-	if has_pickaxe:
-		points_to_check.append(max_reach)
+
+	# --- ANIMATION TWEEN ---
+	if hand_sprite.visible:
+		var tween = create_tween()
+		var start_rot = hand_sprite.rotation
 		
-	var sent_tiles = {} # Keep track to avoid double-sending for the same tile
+		if is_hoe:
+			# === CHOP ANIMATION (Deep Swing) ===
+			var windup = deg_to_rad(-60) if not sprite.flip_h else deg_to_rad(60)
+			if facing_dir == "up": windup *= -1
+			
+			hand_sprite.rotation += windup
+			
+			var chop_amount = deg_to_rad(135) 
+			var chop_target = start_rot + (chop_amount if not sprite.flip_h else -chop_amount)
+			if facing_dir == "up": 
+				chop_target = start_rot - (chop_amount if not sprite.flip_h else -chop_amount)
+			
+			tween.tween_property(hand_sprite, "rotation", chop_target, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tween.tween_property(hand_sprite, "rotation", start_rot, 0.25).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+		else:
+			# === SWIPE ANIMATION ===
+			var swing_amount = PI / 1.5
+			if sprite.flip_h or facing_dir == "up": 
+				swing_amount *= -1
+				
+			tween.tween_property(hand_sprite, "rotation", start_rot + swing_amount, 0.1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tween.tween_property(hand_sprite, "rotation", start_rot, 0.2).set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT)
+
+	# --- HIT DETECTION ---
+	var points_to_check = [reach]
+	if is_pickaxe or is_hoe: points_to_check.push_front(reach * 0.5)
+
+	var sent_tiles = {}
 	var TILE_SIZE = 64.0
 	
+	var world_builder = null
+	var world_node = get_tree().root.find_child("World", true, false)
+	if world_node: world_builder = world_node.find_child("TileMapLayer", true, false)
+	if not world_builder: world_builder = get_tree().root.find_child("TileMapLayer", true, false)
+
 	for dist in points_to_check:
 		var check_pos = global_position + (dir_vec * dist)
 		var grid_x = floor(check_pos.x / TILE_SIZE)
 		var grid_y = floor(check_pos.y / TILE_SIZE)
 		var key = str(grid_x) + "_" + str(grid_y)
+		var vector_key = Vector2i(grid_x, grid_y)
 		
-		if not sent_tiles.has(key):
+		if sent_tiles.has(key): continue
+
+		var has_object = false
+		if world_builder and world_builder.objects_by_coord.has(vector_key):
+			has_object = true
+		
+		if is_hoe:
+			if has_object:
+				show_wrong_tool_feedback()
+				sent_tiles[key] = true
+				continue
+			else:
+				NetworkManager.send_interact(int(grid_x), int(grid_y))
+				sent_tiles[key] = true
+		else:
 			NetworkManager.send_interact(int(grid_x), int(grid_y))
 			sent_tiles[key] = true
-	
-	if hand_sprite.visible:
-		var tween = create_tween()
-		var start_rot = hand_sprite.rotation
-		
-		var swing_amount = PI / 1.5
-		if sprite.flip_h or facing_dir == "up": 
-			swing_amount *= -1
-			
-		tween.tween_property(hand_sprite, "rotation", start_rot + swing_amount, 0.1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		tween.tween_property(hand_sprite, "rotation", start_rot, 0.2).set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT)
-	
+
 	apply_shake(2.0)
 
-func create_hand_swipe(reach = 35.0):
+func show_wrong_tool_feedback():
+	var txt = FLOATING_TEXT_SCENE.instantiate()
+	txt.global_position = hand_sprite.global_position + Vector2(0, -50)
+	get_tree().root.add_child(txt)
+
+# --- QUADRATIC BEZIER HELPER ---
+func get_bezier_point(t: float, p0: Vector2, p1: Vector2, p2: Vector2) -> Vector2:
+	var u = 1 - t
+	var tt = t * t
+	var uu = u * u
+	return (uu * p0) + (2 * u * t * p1) + (tt * p2)
+
+# --- REWORKED SLASH EFFECT ---
+func create_hand_swipe(reach, color, is_chop_anim):
 	var slash = Line2D.new()
-	slash.width = 10.0
-	slash.default_color = Color(0.701, 0.616, 0.0, 1.0) 
+	slash.width = 10.0 
+	
+	slash.default_color = color
 	slash.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	slash.end_cap_mode = Line2D.LINE_CAP_ROUND
 	
+	# Visual taper
 	var width_curve = Curve.new()
-	width_curve.add_point(Vector2(0, 0.2))
-	width_curve.add_point(Vector2(0.5, 1.0))
-	width_curve.add_point(Vector2(1, 0.0))
+	width_curve.add_point(Vector2(0, 0.2)) 
+	width_curve.add_point(Vector2(0.4, 1.0)) 
+	width_curve.add_point(Vector2(1, 0.0)) 
 	slash.width_curve = width_curve
 
-	add_child(slash)
+	slash.z_index = 0 
 	
-	var hand_pos = hand_sprite.position
+	add_child(slash)
+	slash.position = hand_sprite.position
 	
 	var arc = []
-	var arc_radius = reach * 0.7 
-	var segments = 8
-	var start_angle = -PI/3.0 
-	var end_angle = PI/3.0
+	var segments = 10
 	
-	if facing_dir == "up":
-		start_angle = -PI 
-		end_angle = 0.0 
-		slash.z_index = -1 
-		slash.position = hand_pos 
-	elif facing_dir == "down":
-		start_angle = 0.0
-		end_angle = PI
-		slash.z_index = 2 
-		slash.position = hand_pos 
-	elif facing_dir == "side":
-		slash.position = hand_pos
-		if sprite.flip_h: 
-			start_angle = -PI/2.0
-			end_angle = PI/2.0
-		else: 
-			start_angle = -PI/2.0
-			end_angle = PI/2.0
-		slash.z_index = 2
-
-	for i in range(segments + 1):
-		var t = float(i) / segments
-		var angle = lerp(start_angle, end_angle, t)
-		if sprite.flip_h and facing_dir == "side":
-			angle = PI - angle 
+	if is_chop_anim:
+		# === HOE CURVE: TILLING MOTION (Down & Inwards) ===
+		var p0 = Vector2.ZERO # Start (Shoulder/Head)
+		var p1 = Vector2.ZERO # Control (Swing Out)
+		var p2 = Vector2.ZERO # End (Ground/Feet - Pulled In)
+		
+		if facing_dir == "down":
+			slash.show_behind_parent = false
+			p0 = Vector2(0, -30)      
+			p1 = Vector2(0, 20)       # Straight out
+			p2 = Vector2(0, 40)       # Straight down (Standard chop)
 			
-		arc.append(Vector2(cos(angle), sin(angle)) * arc_radius)
+		elif facing_dir == "up":
+			slash.show_behind_parent = true 
+			p0 = Vector2(0, -30)
+			p1 = Vector2(0, -40)
+			p2 = Vector2(0, -50) 
+			
+		elif facing_dir == "side":
+			slash.show_behind_parent = false
+			var x_dir = 35.0 if not sprite.flip_h else -35.0
+			
+			# SCOOP LOGIC:
+			# Start high -> Swing Wide (x * 1.5) -> Pull IN at bottom (x * 0.5)
+			p0 = Vector2(0, -25)               # Shoulder height
+			p1 = Vector2(x_dir * 1.4, -5)      # Swing OUT wide
+			p2 = Vector2(x_dir * 0.4, 35)      # Pull IN to feet
+		
+		# Generate Curve
+		for i in range(segments + 1):
+			var t = float(i) / segments
+			arc.append(get_bezier_point(t, p0, p1, p2))
+		
+	else:
+		# === PICKAXE SWIPE (Extended Tip Radius) ===
+		# [UPDATED] Radius matched to 1.0x reach to follow the tool TIP
+		var arc_radius = reach * 0.7 
+		
+		var start_angle = 0.0
+		var end_angle = 0.0
+		
+		if facing_dir == "down":
+			slash.show_behind_parent = false
+			start_angle = PI/4.0
+			end_angle = 3.0*PI/4.0
+		elif facing_dir == "up":
+			slash.show_behind_parent = true
+			start_angle = -3.0*PI/4.0
+			end_angle = -PI/4.0
+		elif facing_dir == "side":
+			slash.show_behind_parent = false
+			start_angle = -PI/3.0
+			end_angle = PI/3.0
+			
+			if sprite.flip_h:
+				start_angle = PI - start_angle
+				end_angle = PI - end_angle
+
+		for i in range(segments + 1):
+			var t = float(i) / segments
+			var angle = lerp(start_angle, end_angle, t)
+			arc.append(Vector2(cos(angle), sin(angle)) * arc_radius)
 	
 	slash.points = PackedVector2Array(arc)
 	slash.modulate.a = 0.0
@@ -268,17 +362,20 @@ func equip_item(texture):
 		child.queue_free()
 
 	if texture:
-		if "pickaxe" in texture.resource_path.to_lower():
+		var path = texture.resource_path.to_lower()
+		
+		if "pickaxe" in path:
 			hand_sprite.texture = null
 			var inst = PICKAXE_SCENE.instantiate()
-			inst.set_script(null)
-			inst.monitoring = false
-			inst.monitorable = false
-			var col = inst.get_node_or_null("CollisionShape2D")
-			if col: col.queue_free()
+			inst.name = "Pickaxe"
+			_setup_tool_instance(inst)
 			
-			hand_sprite.add_child(inst)
-			inst.position = Vector2.ZERO
+		elif "hoe" in path:
+			hand_sprite.texture = null
+			var inst = HOE_SCENE.instantiate()
+			inst.name = "Hoe"
+			_setup_tool_instance(inst)
+			
 		else:
 			hand_sprite.texture = texture
 			
@@ -300,6 +397,18 @@ func equip_item(texture):
 				hand_sprite.scale.x = 0.6
 	else:
 		unequip_item()
+
+func _setup_tool_instance(inst):
+	inst.set_script(null)
+	inst.monitoring = false
+	inst.monitorable = false
+	
+	var col = inst.get_node_or_null("CollisionShape2D")
+	if col: col.queue_free()
+	
+	hand_sprite.add_child(inst)
+	inst.position = Vector2.ZERO
+	inst.rotation_degrees = -45 
 
 func unequip_item():
 	hand_sprite.texture = null

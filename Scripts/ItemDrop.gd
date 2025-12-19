@@ -48,6 +48,7 @@ func setup(type, dropped_by_player = false):
 		var path = "res://Assets/icons/" + item_name + ".png"
 		if item_name == "Rope": path = "res://Assets/icons/Rope.png" 
 		elif item_name == "Pickaxe": path = "res://Assets/pickaxe-iron.png"
+		elif item_name == "Hoe": path = "res://Assets/item77.png"
 		elif item_name == "Crafting Table": path = "res://Assets/Crafting Table.png"
 		elif item_name == "Bonfire": path = "res://Assets/Bonfire_02-Sheet.png"
 		elif item_name == "Fence": path = "res://Assets/FENCE 1 - DAY.png"

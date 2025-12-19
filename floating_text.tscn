@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://d0nnuywajl03x"]
+
+[ext_resource type="Script" uid="uid://bsdy4im66ubc2" path="res://Scripts/floating_text.gd" id="1_58iww"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_wvgbu"]
+font_color = Color(1, 0, 0, 1)
+outline_size = 2
+outline_color = Color(0, 0, 0, 1)
+
+[node name="FloatingText" type="Label"]
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Wrong Tool!"
+label_settings = SubResource("LabelSettings_wvgbu")
+script = ExtResource("1_58iww")

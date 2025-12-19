@@ -4,8 +4,8 @@
 [ext_resource type="Script" uid="uid://cxv47io8btbkf" path="res://Scripts/ItemDrop.gd" id="2_script"]
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_28gmr"]
-a = Vector2(11.999999, -11)
-b = Vector2(-35, 23.000002)
+a = Vector2(36.36363, -27.272724)
+b = Vector2(-13.999998, 9.000002)
 
 [node name="pickaxe_crafted" type="Area2D"]
 y_sort_enabled = true
@@ -21,6 +21,6 @@ region_enabled = true
 region_rect = Rect2(3240, 2220, 600, 600)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(-3, -1)
+position = Vector2(19, -15)
 rotation = 3.1415927
 shape = SubResource("SegmentShape2D_28gmr")
