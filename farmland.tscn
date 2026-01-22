@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://cexi56yxf0uma"]
+
+[ext_resource type="Texture2D" uid="uid://61e2w38jvubt" path="res://Scripts/Plants.png" id="1_kaipa"]
+
+[node name="Farmland" type="Node2D"]
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+color = Color(0.352941, 0.25098, 0.14902, 1)
+polygon = PackedVector2Array(0, -16, 32, 0, 0, 16, -32, 0)
+
+[node name="CropSprite" type="Sprite2D" parent="."]
+position = Vector2(6, -15)
+texture = ExtResource("1_kaipa")
+hframes = 4
+region_enabled = true
+region_rect = Rect2(8, 10, 116, 37)

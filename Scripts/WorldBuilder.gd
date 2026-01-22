@@ -36,6 +36,9 @@ var table_drop_scene = preload("res://crafting_table_drop.tscn")
 var bonfire_drop_scene = preload("res://bonfire_drop.tscn")
 var fence_scene = preload("res://fence.tscn")
 
+# New Preload
+var farmland_scene = preload("res://Farmland.tscn")
+
 # Coastline Overlay
 var coastline_overlay: Node2D
 
@@ -77,7 +80,6 @@ func _on_server_update(data):
 			if data.get("destroyed", false):
 				m.destroy()
 				active_monsters.erase(id)
-				# False = Natural Drop (Instant pickup)
 				spawn_drops(data.get("drops", []), m.position, false)
 				
 	elif data.get("event") == "object_removed":
@@ -92,10 +94,8 @@ func _on_server_update(data):
 		var coord = Vector2i(data.get("x", 0), data.get("y", 0))
 		_real_spawn_object(data.get("type", ""), coord)
 
-	# --- NEW: HANDLE ITEM DROPS (FROM INVENTORY) ---
 	elif data.get("event") == "item_spawn":
 		var drop_pos = Vector2(data.get("x", 0), data.get("y", 0))
-		# True = Dropped by Player (Enforce distance rule)
 		spawn_drops(data.get("drops", []), drop_pos, true)
 
 func sync_world_objects(list):
@@ -337,6 +337,8 @@ func _real_spawn_object(type, coord):
 	elif type == "Crafting Table": scene = load("res://crafting_table.tscn")
 	elif type == "Bonfire": scene = load("res://bonfire.tscn")
 	elif type == "Fence": scene = fence_scene
+	# --- NEW: Farmland ---
+	elif type == "Farmland": scene = farmland_scene
 	
 	if !scene: return
 	var s = scene.instantiate()
@@ -371,7 +373,6 @@ func remove_object_at(coord, drops_list):
 		get_parent().add_child(poof)
 		poof.emitting = true
 		
-		# False = Natural Drop
 		spawn_drops(drops_list, target.position, false)
 		
 		if target.has_method("propagate_update"):
@@ -390,10 +391,8 @@ func hit_object_at(coord, drops_list):
 			s.modulate = Color(10,10,10)
 			t.tween_property(s, "modulate", Color(1,1,1), 0.1)
 			if player and player.has_method("apply_shake"): player.apply_shake(1.0)
-		# False = Natural Drop
 		spawn_drops(drops_list, target.position, false)
 
-# --- UPDATED: Accepts Player Drop Flag ---
 func spawn_drops(drops_list, pos, is_player_drop=false):
 	for d in drops_list:
 		var type = d["type"]
@@ -417,6 +416,5 @@ func spawn_drops(drops_list, pos, is_player_drop=false):
 				var par = get_node_or_null("../Objects")
 				if par: par.add_child(drop)
 				
-				# Pass the flag to setup
 				if drop.has_method("setup"): 
 					drop.setup(type, is_player_drop)

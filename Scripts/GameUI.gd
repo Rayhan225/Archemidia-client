@@ -49,7 +49,8 @@ const COL_OUTLINE = Color(0.05, 0.05, 0.05, 1.0)   # Near Black
 const OUTLINE_SIZE = 4
 
 # Item Categories
-const CAT_BUILDINGS = ["Fence", "Bonfire", "Crafting Table"]
+# [UPDATED] Added "Turnip" here so it triggers placement mode instead of equip mode
+const CAT_BUILDINGS = ["Fence", "Bonfire", "Crafting Table", "Turnip"]
 const CAT_WEAPONS = ["Sword", "Bow"]
 const CAT_TOOLS = ["Pickaxe", "Hoe"]
 
@@ -103,7 +104,6 @@ func _apply_text_style(lbl: Label, color: Color = COL_TEXT_MAIN):
 	lbl.add_theme_color_override("font_color", color)
 	lbl.add_theme_color_override("font_outline_color", COL_OUTLINE)
 	lbl.add_theme_constant_override("outline_size", OUTLINE_SIZE)
-	# Removing modulate to let font_color take full effect cleanly
 	lbl.modulate = Color(1, 1, 1, 1) 
 
 func update_cursor_state():
@@ -211,6 +211,7 @@ func show_pickup_notification(item_name, count):
 		elif item_name == "Hoe": path = "res://Assets/Hoe.png"
 		elif item_name == "Bonfire": path = "res://Assets/Bonfire_02-Sheet.png"
 		elif item_name == "Fence": path = "res://Assets/FENCE 1 - DAY.png"
+		elif item_name == "Turnip": path = "res://Assets/Turnip.png" # [UPDATED] Turnip Icon
 		
 		if ResourceLoader.exists(path):
 			icon.texture = load(path)
@@ -444,8 +445,6 @@ func apply_craft_btn_style(btn):
 	btn.add_theme_stylebox_override("hover", style)
 	btn.add_theme_stylebox_override("pressed", style)
 	if pixel_font: btn.add_theme_font_override("font", pixel_font)
-	# Also style button text? Button uses internal label, hard to target directly without theme.
-	# But generally overrides propagate.
 
 func _process(delta):
 	if Input.is_key_pressed(KEY_I):
@@ -551,6 +550,7 @@ func start_placement_mode(type):
 	var path = "res://Assets/Crafting Table.png"
 	if type == "Bonfire": path = "res://Assets/Bonfire_02-Sheet.png"
 	elif type == "Fence": path = "res://Assets/FENCE 1 - DAY.png"
+	elif type == "Turnip": path = "res://Assets/Turnip.png" # [UPDATED]
 	
 	if ResourceLoader.exists(path):
 		var tex = load(path)
@@ -563,6 +563,16 @@ func start_placement_mode(type):
 		elif type == "Fence":
 			hologram.texture = tex
 			hologram.offset = Vector2(0, -16)
+		# [UPDATED] Handle Turnip sheet or single sprite
+		elif type == "Turnip":
+			hologram.texture = tex
+			# If it's a spritesheet (like standard crop sheets), default to first frame (seed/stage 0)
+			if tex.get_width() > 32:
+				var atlas = AtlasTexture.new()
+				atlas.atlas = tex
+				atlas.region = Rect2(0, 0, 32, 32)
+				hologram.texture = atlas
+			hologram.offset = Vector2(0, 0)
 		else:
 			hologram.texture = tex
 			hologram.offset = Vector2(0, -2)

@@ -4,33 +4,25 @@ var item_name = "Wood"
 var collected = false
 var can_collect = false 
 var is_player_dropped = false 
-var activation_distance = 192.0 
+var activation_distance = 64.0 # Reduced for snappier feel
 
 @onready var sprite = $Sprite2D
 
 func _ready():
-	collision_layer = 1
-	collision_mask = 1
+	collision_layer = 0 # No physics collision
+	collision_mask = 1  # Only detect Player (Layer 1)
 	monitoring = true
-	monitorable = true
+	monitorable = false # Don't let others detect me
 	
 	var shape = CollisionShape2D.new()
 	var circle = CircleShape2D.new()
-	circle.radius = 32
+	circle.radius = 24
 	shape.shape = circle
 	add_child(shape)
 	
-	if not body_entered.is_connected(_on_body_entered):
-		body_entered.connect(_on_body_entered)
+	body_entered.connect(_on_body_entered)
 	
-	if sprite and sprite.texture:
-		var outline = sprite.duplicate()
-		outline.modulate = Color(0, 0, 0, 1)
-		outline.show_behind_parent = true
-		outline.scale = Vector2(1.2, 1.2)
-		outline.position = Vector2.ZERO
-		sprite.add_child(outline)
-	
+	# Setup Visuals (Floating animation)
 	if sprite:
 		var t = create_tween().set_loops()
 		t.tween_property(sprite, "position:y", -5, 1.0).set_trans(Tween.TRANS_SINE)
@@ -40,42 +32,39 @@ func setup(type, dropped_by_player = false):
 	item_name = type
 	is_player_dropped = dropped_by_player
 	
-	# Wait for ready safely
-	if not is_inside_tree():
-		await ready
-	
+	# Icon Loader
 	if sprite:
-		var path = "res://Assets/icons/" + item_name + ".png"
-		if item_name == "Rope": path = "res://Assets/icons/Rope.png" 
-		elif item_name == "Pickaxe": path = "res://Assets/pickaxe-iron.png"
-		elif item_name == "Hoe": path = "res://Assets/item77.png"
-		elif item_name == "Crafting Table": path = "res://Assets/Crafting Table.png"
-		elif item_name == "Bonfire": path = "res://Assets/Bonfire_02-Sheet.png"
-		elif item_name == "Fence": path = "res://Assets/FENCE 1 - DAY.png"
-		elif item_name == "Wood": path = "res://Assets/icons/Wood.png"
+		var path = "res://Assets/" + item_name + ".png"
+		# Handle specific overrides if filenames differ
+		if item_name == "Wood": path = "res://Assets/icons/Wood.png"
 		elif item_name == "Stone": path = "res://Assets/icons/Stone.png"
-
-		if ResourceLoader.exists(path): sprite.texture = load(path)
+		elif item_name == "Rope": path = "res://Assets/icons/Rope.png"
+		elif item_name == "Turnip": path = "res://Assets/icons/Turnip.png" # Example
+		
+		if ResourceLoader.exists(path):
+			sprite.texture = load(path)
 		else:
+			# Fallback to name
 			path = "res://Assets/" + item_name + ".png"
 			if ResourceLoader.exists(path): sprite.texture = load(path)
 
+	# Pickup Delay Logic
 	if not is_player_dropped:
-		# Double check tree validity
-		if get_tree():
-			await get_tree().create_timer(0.5).timeout
-			can_collect = true
-			_check_overlap()
-		else:
-			can_collect = true # Fallback if no tree found
+		# Natural drop: small delay so it spawns before pickup
+		can_collect = false
+		await get_tree().create_timer(0.4).timeout
+		can_collect = true
+		_check_overlap()
 	else:
+		# Player drop: must walk away first
 		can_collect = false
 
-func _physics_process(delta):
+func _physics_process(_delta):
 	if is_player_dropped and not can_collect:
 		var player = get_tree().root.find_child("Player", true, false)
 		if player:
 			var dist = global_position.distance_to(player.global_position)
+			# Re-enable pickup if player walked far enough away
 			if dist > activation_distance:
 				can_collect = true
 
@@ -91,13 +80,13 @@ func _on_body_entered(body):
 		collect()
 
 func collect():
+	# 1. Notify Server
 	NetworkManager.send_collect_item(item_name)
 	
-	var player = get_tree().root.find_child("Player", true, false)
-	if player:
-		var t = create_tween()
-		t.tween_property(self, "global_position", player.global_position, 0.3).set_trans(Tween.TRANS_BACK)
-		t.parallel().tween_property(self, "scale", Vector2(0,0), 0.3)
-		t.chain().tween_callback(queue_free)
-	else:
-		queue_free()
+	# 2. Visual Feedback (Shrink and Delete)
+	set_physics_process(false)
+	monitoring = false # Stop detecting
+	
+	var t = create_tween()
+	t.tween_property(self, "scale", Vector2.ZERO, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	t.tween_callback(queue_free)
