@@ -10,6 +10,8 @@ var crafting_window: Panel
 var building_slots = []
 var remove_button: Button 
 var slot_scene = preload("res://Slot.tscn")
+var game_hub_scene = preload("res://game_hub_ui.tscn") # [NEW] Preload Game Hub Scene
+
 var selected_slot = null 
 
 # Hotbar Elements
@@ -49,7 +51,6 @@ const COL_OUTLINE = Color(0.05, 0.05, 0.05, 1.0)   # Near Black
 const OUTLINE_SIZE = 4
 
 # Item Categories
-# [UPDATED] Added "Turnip" here so it triggers placement mode instead of equip mode
 const CAT_BUILDINGS = ["Fence", "Bonfire", "Crafting Table", "Turnip"]
 const CAT_WEAPONS = ["Sword", "Bow"]
 const CAT_TOOLS = ["Pickaxe", "Hoe"]
@@ -107,7 +108,9 @@ func _apply_text_style(lbl: Label, color: Color = COL_TEXT_MAIN):
 	lbl.modulate = Color(1, 1, 1, 1) 
 
 func update_cursor_state():
-	if inventory_window.visible or crafting_window.visible or placement_mode:
+	# [UPDATED] Check if GameHubUI exists/is visible to keep cursor
+	var hub_open = has_node("GameHubUI")
+	if inventory_window.visible or crafting_window.visible or placement_mode or hub_open:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	else:
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
@@ -211,7 +214,7 @@ func show_pickup_notification(item_name, count):
 		elif item_name == "Hoe": path = "res://Assets/Hoe.png"
 		elif item_name == "Bonfire": path = "res://Assets/Bonfire_02-Sheet.png"
 		elif item_name == "Fence": path = "res://Assets/FENCE 1 - DAY.png"
-		elif item_name == "Turnip": path = "res://Assets/Turnip.png" # [UPDATED] Turnip Icon
+		elif item_name == "Turnip": path = "res://Assets/Turnip.png" 
 		
 		if ResourceLoader.exists(path):
 			icon.texture = load(path)
@@ -428,6 +431,16 @@ func create_crafting_ui():
 	btn_fence.pressed.connect(func(): _craft_item("Fence"))
 	vbox.add_child(btn_fence)
 	
+	# [NEW] Lighthouse Crafting Button (if you want it to be craftable)
+	# If you decided Lighthouse is permanent only, remove this block.
+	# If you want it visible, here it is:
+	var btn_light = Button.new()
+	btn_light.text = "Craft Lighthouse\n(20 Stone, 10 Wood)"
+	btn_light.custom_minimum_size = Vector2(0, 50)
+	apply_craft_btn_style(btn_light)
+	btn_light.pressed.connect(func(): _craft_item("Lighthouse"))
+	# vbox.add_child(btn_light) # Uncomment to enable
+	
 	var hint = Label.new()
 	hint.text = "Press C to Close"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -481,6 +494,10 @@ func _input(event):
 			select_hotbar_slot(index)
 		elif event.keycode == KEY_H:
 			_unequip_all()
+		# [NEW] ESC closes the Game Hub as well
+		elif event.keycode == KEY_ESCAPE:
+			var hub = get_node_or_null("GameHubUI")
+			if hub: hub.queue_free()
 
 func _unhandled_input(event):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -550,7 +567,8 @@ func start_placement_mode(type):
 	var path = "res://Assets/Crafting Table.png"
 	if type == "Bonfire": path = "res://Assets/Bonfire_02-Sheet.png"
 	elif type == "Fence": path = "res://Assets/FENCE 1 - DAY.png"
-	elif type == "Turnip": path = "res://Assets/Turnip.png" # [UPDATED]
+	elif type == "Turnip": path = "res://Assets/Turnip.png" 
+	elif type == "Lighthouse": path = "res://Assets/LightHouseAnimHighRes1.png" # [NEW] Hologram Frame 1
 	
 	if ResourceLoader.exists(path):
 		var tex = load(path)
@@ -563,16 +581,17 @@ func start_placement_mode(type):
 		elif type == "Fence":
 			hologram.texture = tex
 			hologram.offset = Vector2(0, -16)
-		# [UPDATED] Handle Turnip sheet or single sprite
 		elif type == "Turnip":
 			hologram.texture = tex
-			# If it's a spritesheet (like standard crop sheets), default to first frame (seed/stage 0)
 			if tex.get_width() > 32:
 				var atlas = AtlasTexture.new()
 				atlas.atlas = tex
 				atlas.region = Rect2(0, 0, 32, 32)
 				hologram.texture = atlas
 			hologram.offset = Vector2(0, 0)
+		elif type == "Lighthouse":
+			hologram.texture = tex
+			hologram.offset = Vector2(0, -32) # Pivot adjustment
 		else:
 			hologram.texture = tex
 			hologram.offset = Vector2(0, -2)
@@ -596,6 +615,14 @@ func _confirm_placement_at_hologram():
 
 func _on_server_message(data):
 	var event = data.get("event", "")
+	
+	# --- [NEW] Game Hub Trigger ---
+	if event == "open_window":
+		var window_name = data.get("window", "")
+		if window_name == "game_hub":
+			open_game_hub()
+			return # Stop processing other events if opening window
+			
 	if event == "inventory_update":
 		var new_items = data["items"]
 		detect_and_show_pickups(new_items)
@@ -609,6 +636,13 @@ func _on_server_message(data):
 		var player = get_tree().root.find_child("Player", true, false)
 		if player and player.has_method("_on_take_damage_check"):
 			player._on_take_damage_check(data["hp"])
+
+# [NEW] Function to spawn the Game Hub Window
+func open_game_hub():
+	if has_node("GameHubUI"): return
+	var hub = game_hub_scene.instantiate()
+	add_child(hub)
+	update_cursor_state() # Will unlock cursor because node exists
 
 func detect_and_show_pickups(new_items):
 	for item_name in new_items:

@@ -35,6 +35,7 @@ var hoe_drop_scene = preload("res://hoe_crafted.tscn")
 var table_drop_scene = preload("res://crafting_table_drop.tscn")
 var bonfire_drop_scene = preload("res://bonfire_drop.tscn")
 var fence_scene = preload("res://fence.tscn")
+var lighthouse_scene = preload("res://Lighthouse.tscn")
 
 # New Preload
 var farmland_scene = preload("res://Farmland.tscn")
@@ -337,6 +338,8 @@ func _real_spawn_object(type, coord):
 	elif type == "Crafting Table": scene = load("res://crafting_table.tscn")
 	elif type == "Bonfire": scene = load("res://bonfire.tscn")
 	elif type == "Fence": scene = fence_scene
+	elif type == "Lighthouse": scene = lighthouse_scene
+	
 	# --- NEW: Farmland ---
 	elif type == "Farmland": scene = farmland_scene
 	

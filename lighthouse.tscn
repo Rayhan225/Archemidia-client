@@ -1,0 +1,98 @@
+[gd_scene load_steps=19 format=3 uid="uid://s8heclu1yujq"]
+
+[ext_resource type="Texture2D" uid="uid://buoemnp0ig2ka" path="res://Scripts/LightHouseAnimHighRes1.png" id="1_6d8u5"]
+[ext_resource type="Script" uid="uid://c804g1tue2mds" path="res://Scripts/Lighthouse.gd" id="1_kmljk"]
+[ext_resource type="Texture2D" uid="uid://dwt8hyg33frim" path="res://Scripts/LightHouseAnimHighRes2.png" id="2_kmljk"]
+[ext_resource type="Texture2D" uid="uid://5wf161py54tl" path="res://Scripts/LightHouseAnimHighRes3.png" id="3_q8l30"]
+[ext_resource type="Texture2D" uid="uid://dsdnp3d34pps5" path="res://Scripts/LightHouseAnimHighRes4.png" id="4_wex0m"]
+[ext_resource type="Texture2D" uid="uid://dd1q8ql4q8opg" path="res://Scripts/LightHouseAnimHighRes5.png" id="5_4a4at"]
+[ext_resource type="Texture2D" uid="uid://ddanpn4sogfqe" path="res://Scripts/LightHouseAnimHighRes6.png" id="6_kyvlj"]
+[ext_resource type="Texture2D" uid="uid://gfq4sd7rsnq8" path="res://Scripts/LightHouseAnimHighRes7.png" id="7_i1t1n"]
+[ext_resource type="Texture2D" uid="uid://bg7or1i8i0kg5" path="res://Scripts/LightHouseAnimHighRes8.png" id="8_3su7k"]
+[ext_resource type="Texture2D" uid="uid://dbygw4i32y4qx" path="res://Scripts/LightHouseAnimHighRes9.png" id="9_y70al"]
+[ext_resource type="Texture2D" uid="uid://dr84epsq18q26" path="res://Scripts/LightHouseAnimHighRes10.png" id="10_pj0bx"]
+[ext_resource type="Texture2D" uid="uid://6j7j41qdxrk7" path="res://Scripts/LightHouseAnimHighRes11.png" id="11_xfv3h"]
+[ext_resource type="Texture2D" uid="uid://c7i1lew8ygqpi" path="res://Scripts/LightHouseAnimHighRes12.png" id="12_j8b46"]
+[ext_resource type="Texture2D" uid="uid://fid16shfntig" path="res://Scripts/LightHouseAnimHighRes13.png" id="13_hj17v"]
+[ext_resource type="Texture2D" uid="uid://2i2sdynihgls" path="res://Scripts/LightHouseAnimHighRes14.png" id="14_8cwf0"]
+[ext_resource type="Script" uid="uid://c5vp6ixjee23w" path="res://Scripts/ObjectShadow.gd" id="16_q8l30"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_k7jqg"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_6d8u5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_kmljk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_q8l30")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_wex0m")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_4a4at")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_kyvlj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_i1t1n")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_3su7k")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_y70al")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_pj0bx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_xfv3h")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_j8b46")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_hj17v")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_8cwf0")
+}],
+"loop": true,
+"name": &"default",
+"speed": 8.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_akcxv"]
+size = Vector2(197, 232)
+
+[node name="Lighthouse" type="StaticBody2D"]
+script = ExtResource("1_kmljk")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(1, 0)
+scale = Vector2(0.3, 0.3)
+sprite_frames = SubResource("SpriteFrames_k7jqg")
+frame = 4
+frame_progress = 0.8084456
+offset = Vector2(0, -330)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+y_sort_enabled = true
+position = Vector2(0, 12)
+polygon = PackedVector2Array(-51, -25, -52, -14, 0, 12, 54, -12, 54, -22, 1, 0)
+
+[node name="OcclusionArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OcclusionArea"]
+position = Vector2(2, -120)
+shape = SubResource("RectangleShape2D_akcxv")
+
+[node name="ShadowGenerator" type="Node2D" parent="."]
+scale = Vector2(0.8, 0.2)
+script = ExtResource("16_q8l30")
+target_sprite_path = NodePath("../AnimatedSprite2D")
