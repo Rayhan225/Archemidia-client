@@ -4,6 +4,7 @@ const SPEED = 100.0
 const PICKAXE_SCENE = preload("res://pickaxe_crafted.tscn")
 const HOE_SCENE = preload("res://hoe_crafted.tscn")
 const FLOATING_TEXT_SCENE = preload("res://floating_text.tscn")
+var is_input_locked = false
 
 @onready var sprite = $AnimatedSprite2D
 @onready var camera = $Camera2D
@@ -49,7 +50,16 @@ func _ready():
 	
 	sprite.animation_finished.connect(_on_animation_finished)
 
+func set_input_locked(locked: bool):
+	is_input_locked = locked
+	if is_input_locked:
+		velocity = Vector2.ZERO # Stop moving immediately
+		if sprite: sprite.stop() # Stop animation
+
 func _physics_process(delta):
+	if is_input_locked:
+		move_and_slide() # Keep applying gravity/velocity decay if needed, but no input
+		return
 	if Input.is_action_just_pressed("ui_accept"):
 		if not is_attacking:
 			attack()

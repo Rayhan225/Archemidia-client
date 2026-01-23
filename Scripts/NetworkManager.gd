@@ -33,6 +33,12 @@ func _process(delta):
 func send_data(data: Dictionary):
 	if _socket.get_ready_state() == WebSocketPeer.STATE_OPEN:
 		_socket.send_text(JSON.stringify(data))
+func reset_connection():
+	print("Resetting connection to fetch fresh world data...")
+	_socket.close()
+	# Give it a moment to fully close before reconnecting
+	await get_tree().create_timer(0.1).timeout
+	connect_to_server()
 
 func send_move_request(pos):
 	send_data({"action": "request_move", "x": pos.x, "y": pos.y, "seqId": Time.get_ticks_msec()})

@@ -1,0 +1,157 @@
+[gd_scene load_steps=5 format=3 uid="uid://bwj4542rp8ixu"]
+
+[ext_resource type="Script" uid="uid://dqtai0xgdr3d6" path="res://PauseMenu.gd" id="1_logic"]
+[ext_resource type="Script" uid="uid://btu38t6j8jkgu" path="res://ProceduralMenuBackground.gd" id="2_bg_gen"]
+[ext_resource type="Script" uid="uid://dp0x0p1e67y4l" path="res://SettingsMenu.gd" id="3_settings"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.1, 0.08, 0.14, 0.95)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.8, 0.6, 0.3, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="PauseMenu" type="CanvasLayer"]
+process_mode = 3
+layer = 100
+script = ExtResource("1_logic")
+
+[node name="Dimmer" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.4)
+
+[node name="ProceduralBackground" type="Control" parent="."]
+modulate = Color(1, 1, 1, 0.8)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_bg_gen")
+
+[node name="MainContainer" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Label" type="Label" parent="MainContainer/VBox"]
+layout_mode = 2
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 4
+theme_override_constants/shadow_offset_y = 4
+theme_override_font_sizes/font_size = 64
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="ResumeBtn" type="Button" parent="MainContainer/VBox"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "RESUME"
+
+[node name="SettingsBtn" type="Button" parent="MainContainer/VBox"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "SETTINGS"
+
+[node name="QuitBtn" type="Button" parent="MainContainer/VBox"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "QUIT TO TITLE"
+
+[node name="SettingsPanel" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -250.0
+offset_right = 300.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+script = ExtResource("3_settings")
+
+[node name="Margin" type="MarginContainer" parent="SettingsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 30
+
+[node name="VBox" type="VBoxContainer" parent="SettingsPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Label" type="Label" parent="SettingsPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "SETTINGS"
+horizontal_alignment = 1
+
+[node name="TabContainer" type="TabContainer" parent="SettingsPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+current_tab = 0
+
+[node name="Audio" type="VBoxContainer" parent="SettingsPanel/Margin/VBox/TabContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+metadata/_tab_index = 0
+
+[node name="MasterVol" type="HBoxContainer" parent="SettingsPanel/Margin/VBox/TabContainer/Audio"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="SettingsPanel/Margin/VBox/TabContainer/Audio/MasterVol"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Master Volume"
+
+[node name="MasterSlider" type="HSlider" parent="SettingsPanel/Margin/VBox/TabContainer/Audio/MasterVol"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="Controls" type="ScrollContainer" parent="SettingsPanel/Margin/VBox/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Grid" type="GridContainer" parent="SettingsPanel/Margin/VBox/TabContainer/Controls"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="CloseSettings" type="Button" parent="SettingsPanel/Margin/VBox"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "BACK"

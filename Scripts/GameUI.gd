@@ -11,6 +11,7 @@ var building_slots = []
 var remove_button: Button 
 var slot_scene = preload("res://Slot.tscn")
 var game_hub_scene = preload("res://game_hub_ui.tscn") # [NEW] Preload Game Hub Scene
+const PAUSE_MENU_SCENE = preload("res://PauseMenu.tscn")
 
 var selected_slot = null 
 
@@ -487,6 +488,13 @@ func _input(event):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		if placement_mode:
 			stop_placement_mode()
+			
+			
+	if event.is_action_pressed("ui_cancel"): # Usually ESC
+				 # Don't open pause menu if we are just closing a window
+			if inventory_window.visible:toggle_inventory()
+			elif crafting_window and crafting_window.visible:toggle_crafting(false)
+			else: _spawn_pause_menu()
 
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode >= KEY_1 and event.keycode <= KEY_9:
@@ -498,6 +506,11 @@ func _input(event):
 		elif event.keycode == KEY_ESCAPE:
 			var hub = get_node_or_null("GameHubUI")
 			if hub: hub.queue_free()
+
+func _spawn_pause_menu():
+	var pause_instance = PAUSE_MENU_SCENE.instantiate()
+	get_parent().add_child(pause_instance) 
+	# The PauseMenu script handles setting get_tree().paused = true automatically on _ready
 
 func _unhandled_input(event):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:

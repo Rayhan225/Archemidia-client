@@ -1,31 +1,23 @@
-[gd_scene load_steps=5 format=3 uid="uid://28bbwfewtxnx"]
+[gd_scene load_steps=7 format=3 uid="uid://28bbwfewtxnx"]
 
 [ext_resource type="Script" uid="uid://b3gkp4kmvco26" path="res://Scripts/StartMenu.gd" id="1_script"]
-[ext_resource type="VideoStream" uid="uid://bvd6bm6wrpsqe" path="res://Assets/menu_bg.ogv" id="2_ia0g5"]
+[ext_resource type="Script" uid="uid://btu38t6j8jkgu" path="res://ProceduralMenuBackground.gd" id="2_bg_gen"]
+[ext_resource type="Script" uid="uid://dp0x0p1e67y4l" path="res://SettingsMenu.gd" id="3_settings"]
+[ext_resource type="Script" uid="uid://c4c0pnafbua3o" path="res://ProceduralBGM.gd" id="4_audio"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
-bg_color = Color(0, 0, 0, 0.6)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.4, 0.4, 0.4, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.16, 0.13, 0.2, 0.95)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.8, 0.6, 0.3, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
-bg_color = Color(0.1, 0.1, 0.1, 0.8)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.84, 0, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+[sub_resource type="AudioStreamGenerator" id="AudioStreamGenerator_bgm"]
 
 [node name="StartMenu" type="Control"]
 layout_mode = 3
@@ -36,146 +28,147 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="BackgroundVideo" type="VideoStreamPlayer" parent="."]
-layout_mode = 1
+[node name="BackgroundLayer" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="ProceduralBackground" type="Control" parent="BackgroundLayer"]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-stream = ExtResource("2_ia0g5")
-autoplay = true
-expand = true
-buffering_msec = 1000
+script = ExtResource("2_bg_gen")
 
-[node name="BackgroundPlaceholder" type="ColorRect" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.113725, 0.168627, 0.32549, 1)
+[node name="CanvasLayerUI" type="CanvasLayer" parent="."]
 
-[node name="TitleContainer" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -300.0
-offset_top = 80.0
-offset_right = 300.0
-offset_bottom = 200.0
-grow_horizontal = 2
-
-[node name="TitleLabel" type="Label" parent="TitleContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
-theme_override_constants/shadow_offset_x = 4
-theme_override_constants/shadow_offset_y = 4
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 72
-text = "ARCHEMIDIA"
-horizontal_alignment = 1
-
-[node name="Subtitle" type="Label" parent="TitleContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 24
-text = "Survival RPG"
-horizontal_alignment = 1
-
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
-layout_mode = 1
+[node name="MainMenu" type="VBoxContainer" parent="CanvasLayerUI"]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -125.0
-offset_top = 50.0
-offset_right = 125.0
+offset_left = -160.0
+offset_top = -100.0
+offset_right = 160.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 25
+
+[node name="TitleLabel" type="Label" parent="CanvasLayerUI/MainMenu"]
+layout_mode = 2
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.6)
+theme_override_constants/shadow_offset_x = 4
+theme_override_constants/shadow_offset_y = 4
+theme_override_font_sizes/font_size = 72
+text = "COZY WORLD"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="CanvasLayerUI/MainMenu"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="PlayButton" type="Button" parent="CanvasLayerUI/MainMenu"]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "PLAY"
+
+[node name="SettingsButton" type="Button" parent="CanvasLayerUI/MainMenu"]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "SETTINGS"
+
+[node name="QuitButton" type="Button" parent="CanvasLayerUI/MainMenu"]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "QUIT"
+
+[node name="SettingsPanel" type="PanelContainer" parent="CanvasLayerUI"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -250.0
+offset_right = 300.0
 offset_bottom = 250.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+script = ExtResource("3_settings")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/SettingsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 30
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayerUI/SettingsPanel/Margin"]
+layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="BtnEnter" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_hover")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "ENTER WORLD"
-
-[node name="BtnSettings" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_hover")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "SETTINGS"
-
-[node name="BtnQuit" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_hover")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "QUIT"
-
-[node name="SettingsPanel" type="PanelContainer" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -150.0
-offset_right = 200.0
-offset_bottom = 150.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Panel" type="Panel" parent="SettingsPanel"]
-layout_mode = 2
-
-[node name="VBox" type="VBoxContainer" parent="SettingsPanel"]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="SettingsPanel/VBox"]
+[node name="Label" type="Label" parent="CanvasLayerUI/SettingsPanel/Margin/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "SETTINGS"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="SettingsPanel/VBox"]
+[node name="TabContainer" type="TabContainer" parent="CanvasLayerUI/SettingsPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+current_tab = 0
+
+[node name="Audio" type="VBoxContainer" parent="CanvasLayerUI/SettingsPanel/Margin/VBox/TabContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+metadata/_tab_index = 0
+
+[node name="MasterVol" type="HBoxContainer" parent="CanvasLayerUI/SettingsPanel/Margin/VBox/TabContainer/Audio"]
 layout_mode = 2
 
-[node name="Label2" type="Label" parent="SettingsPanel/VBox"]
+[node name="Label" type="Label" parent="CanvasLayerUI/SettingsPanel/Margin/VBox/TabContainer/Audio/MasterVol"]
+custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
-text = "(Settings Placeholder)"
-horizontal_alignment = 1
+text = "Master Volume"
 
-[node name="BtnCloseSettings" type="Button" parent="SettingsPanel/VBox"]
-custom_minimum_size = Vector2(100, 40)
+[node name="MasterSlider" type="HSlider" parent="CanvasLayerUI/SettingsPanel/Margin/VBox/TabContainer/Audio/MasterVol"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="Controls" type="ScrollContainer" parent="CanvasLayerUI/SettingsPanel/Margin/VBox/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Grid" type="GridContainer" parent="CanvasLayerUI/SettingsPanel/Margin/VBox/TabContainer/Controls"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="CloseSettings" type="Button" parent="CanvasLayerUI/SettingsPanel/Margin/VBox"]
+custom_minimum_size = Vector2(150, 50)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "BACK"
 
-[connection signal="mouse_entered" from="VBoxContainer/BtnEnter" to="." method="_on_button_mouse_entered" binds= [NodePath("VBoxContainer/BtnEnter")]]
-[connection signal="mouse_exited" from="VBoxContainer/BtnEnter" to="." method="_on_button_mouse_exited" binds= [NodePath("VBoxContainer/BtnEnter")]]
-[connection signal="pressed" from="VBoxContainer/BtnEnter" to="." method="_on_enter_world_pressed"]
-[connection signal="mouse_entered" from="VBoxContainer/BtnSettings" to="." method="_on_button_mouse_entered" binds= [NodePath("VBoxContainer/BtnSettings")]]
-[connection signal="mouse_exited" from="VBoxContainer/BtnSettings" to="." method="_on_button_mouse_exited" binds= [NodePath("VBoxContainer/BtnSettings")]]
-[connection signal="pressed" from="VBoxContainer/BtnSettings" to="." method="_on_settings_pressed"]
-[connection signal="pressed" from="VBoxContainer/BtnQuit" to="." method="_on_quit_pressed"]
-[connection signal="pressed" from="SettingsPanel/VBox/BtnCloseSettings" to="." method="_on_close_settings_pressed"]
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamGenerator_bgm")
+autoplay = true
+script = ExtResource("4_audio")
