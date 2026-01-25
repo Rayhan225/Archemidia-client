@@ -4,7 +4,7 @@ signal server_message_received(data: Dictionary)
 signal login_result(success: bool)
 
 var _socket = WebSocketPeer.new()
-var _server_url = "ws://192.168.0.194:8080/game"
+var _server_url = "ws://10.15.40.205:8080/game"
 
 var game_time = 0.5 
 var my_name = "Guest" 

@@ -224,7 +224,7 @@ func load_chunk(c, is_immediate):
 	var req = HTTPRequest.new();
 	add_child(req)
 	req.request_completed.connect(func(r,co,h,b): _on_chunk(c, req, co, b, is_immediate))
-	req.request("http://192.168.0.194:8080/api/map/chunk?x=%d&y=%d&size=16" % [c.x*16, c.y*16])
+	req.request("http://10.15.40.205:8080/api/map/chunk?x=%d&y=%d&size=16" % [c.x*16, c.y*16])
 
 func unload_chunk(c):
 	var ox = c.x * 16;
