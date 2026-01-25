@@ -10,8 +10,11 @@ var crafting_window: Panel
 var building_slots = []
 var remove_button: Button 
 var slot_scene = preload("res://Slot.tscn")
-var game_hub_scene = preload("res://game_hub_ui.tscn") # [NEW] Preload Game Hub Scene
+var game_hub_scene = preload("res://game_hub_ui.tscn")
 const PAUSE_MENU_SCENE = preload("res://PauseMenu.tscn")
+
+# Preload Chat UI Scene
+var chat_scene = preload("res://ChatUI.tscn")
 
 var selected_slot = null 
 
@@ -29,6 +32,10 @@ var heart_texture = preload("res://heart pixel art 16x16.png")
 var time_label: Label
 var day_count = 1
 var last_game_time = 0.0
+
+# Profile HUD Elements
+var profile_icon: TextureRect
+var profile_name_lbl: Label
 
 # Pickup Notification
 var pickup_container: VBoxContainer
@@ -59,6 +66,10 @@ const CAT_TOOLS = ["Pickaxe", "Hoe"]
 func _ready():
 	NetworkManager.server_message_received.connect(_on_server_message)
 	
+	# Listen for profile changes to update HUD
+	if not NetworkManager.login_result.is_connected(_on_profile_updated):
+		NetworkManager.login_result.connect(_on_profile_updated)
+	
 	if ResourceLoader.exists("res://Assets/pixel.ttf"):
 		pixel_font = load("res://Assets/pixel.ttf")
 	
@@ -67,13 +78,20 @@ func _ready():
 		if inv_grid: inv_grid.columns = 8
 		inventory_window.position.y -= 150 
 		
+	# --- CHAT UI INTEGRATION ---
+	if chat_scene:
+		var chat_instance = chat_scene.instantiate()
+		add_child(chat_instance)
+		move_child(chat_instance, 0)
+		
 	create_building_slots() 
 	create_remove_button()
 	create_crafting_ui()
 	create_hotbar_ui()
 	create_health_ui() 
 	create_pickup_ui() 
-	create_clock_ui() 
+	create_clock_ui()
+	create_profile_hud() # NEW: Avatar HUD
 	
 	hologram = Sprite2D.new()
 	hologram.modulate = Color(1, 1, 1, 0.5) 
@@ -101,6 +119,11 @@ func _ready():
 	
 	update_cursor_state()
 
+# --- HELPER: CHECK IF TYPING ---
+func is_typing() -> bool:
+	var focus = get_viewport().gui_get_focus_owner()
+	return focus is LineEdit or focus is TextEdit
+
 # --- HELPER: APPLY UNIFIED TEXT STYLE ---
 func _apply_text_style(lbl: Label, color: Color = COL_TEXT_MAIN):
 	lbl.add_theme_color_override("font_color", color)
@@ -109,13 +132,75 @@ func _apply_text_style(lbl: Label, color: Color = COL_TEXT_MAIN):
 	lbl.modulate = Color(1, 1, 1, 1) 
 
 func update_cursor_state():
-	# [UPDATED] Check if GameHubUI exists/is visible to keep cursor
 	var hub_open = has_node("GameHubUI")
 	if inventory_window.visible or crafting_window.visible or placement_mode or hub_open:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	else:
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 
+# --- NEW: PROFILE HUD ---
+func create_profile_hud():
+	var panel = PanelContainer.new()
+	panel.name = "ProfilePanel"
+	
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0.5)
+	style.set_corner_radius_all(5)
+	style.content_margin_left = 5
+	style.content_margin_right = 10
+	style.content_margin_top = 5
+	style.content_margin_bottom = 5
+	panel.add_theme_stylebox_override("panel", style)
+	
+	# Position below clock (Clock is at 10,10, height ~30)
+	panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	panel.position = Vector2(10, 50) 
+	
+	var hbox = HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 8)
+	panel.add_child(hbox)
+	
+	# Avatar Icon
+	profile_icon = TextureRect.new()
+	profile_icon.custom_minimum_size = Vector2(24, 24)
+	profile_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	
+	# Use a placeholder texture (white square) so we can tint it
+	var placeholder = PlaceholderTexture2D.new()
+	placeholder.size = Vector2(24, 24)
+	profile_icon.texture = placeholder
+	
+	hbox.add_child(profile_icon)
+	
+	# Name Label
+	profile_name_lbl = Label.new()
+	profile_name_lbl.text = "Guest"
+	_apply_text_style(profile_name_lbl)
+	if pixel_font: profile_name_lbl.add_theme_font_override("font", pixel_font)
+	
+	hbox.add_child(profile_name_lbl)
+	
+	add_child(panel)
+	
+	# Initial Update
+	_update_profile_display()
+
+func _on_profile_updated(_success):
+	_update_profile_display()
+
+func _update_profile_display():
+	if profile_name_lbl:
+		profile_name_lbl.text = NetworkManager.my_name
+		
+	if profile_icon:
+		var id = NetworkManager.my_avatar_id
+		var color = Color.WHITE
+		if id == 1: color = Color(1, 0.4, 0.4) # Red
+		elif id == 2: color = Color(0.4, 1, 0.4) # Green
+		elif id == 3: color = Color(0.4, 0.6, 1) # Blue
+		profile_icon.modulate = color
+
+# --- CLOCK UI ---
 func create_clock_ui():
 	var panel = PanelContainer.new()
 	panel.name = "ClockPanel"
@@ -159,6 +244,7 @@ func update_clock(server_time):
 	var time_str = "%02d:%02d %s" % [hours, minutes, period]
 	time_label.text = "Day %d - %s" % [day_count, time_str]
 
+# --- PICKUP UI ---
 func create_pickup_ui():
 	pickup_container = VBoxContainer.new()
 	pickup_container.name = "PickupContainer"
@@ -252,6 +338,7 @@ func _remove_popup_data(item_name):
 	if active_pickups.has(item_name):
 		active_pickups.erase(item_name)
 
+# --- HEALTH UI ---
 func create_health_ui():
 	health_bar_container = PanelContainer.new()
 	health_bar_container.name = "HealthBarPanel"
@@ -301,6 +388,7 @@ func update_health_display(current_hp):
 		else:
 			heart.value = current_hp - heart_min
 
+# --- HOTBAR UI ---
 func create_hotbar_ui():
 	var panel = PanelContainer.new()
 	panel.name = "HotbarPanel"
@@ -432,15 +520,11 @@ func create_crafting_ui():
 	btn_fence.pressed.connect(func(): _craft_item("Fence"))
 	vbox.add_child(btn_fence)
 	
-	# [NEW] Lighthouse Crafting Button (if you want it to be craftable)
-	# If you decided Lighthouse is permanent only, remove this block.
-	# If you want it visible, here it is:
 	var btn_light = Button.new()
 	btn_light.text = "Craft Lighthouse\n(20 Stone, 10 Wood)"
 	btn_light.custom_minimum_size = Vector2(0, 50)
 	apply_craft_btn_style(btn_light)
 	btn_light.pressed.connect(func(): _craft_item("Lighthouse"))
-	# vbox.add_child(btn_light) # Uncomment to enable
 	
 	var hint = Label.new()
 	hint.text = "Press C to Close"
@@ -461,6 +545,9 @@ func apply_craft_btn_style(btn):
 	if pixel_font: btn.add_theme_font_override("font", pixel_font)
 
 func _process(delta):
+	# [FIX] Do not process gameplay hotkeys if typing in Chat
+	if is_typing(): return
+
 	if Input.is_key_pressed(KEY_I):
 		if not was_i_pressed:
 			toggle_inventory()
@@ -485,13 +572,19 @@ func _process(delta):
 					hologram.modulate = Color(1, 0, 0, 0.6) 
 
 func _input(event):
+	# [FIX] Ignore keyboard shortcuts if typing in chat
+	if is_typing():
+		if event is InputEventKey and event.pressed:
+			# Allow ESC to unfocus chat
+			if event.keycode == KEY_ESCAPE:
+				get_viewport().gui_release_focus()
+			return
+
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		if placement_mode:
 			stop_placement_mode()
 			
-			
-	if event.is_action_pressed("ui_cancel"): # Usually ESC
-				 # Don't open pause menu if we are just closing a window
+	if event.is_action_pressed("ui_cancel"): 
 			if inventory_window.visible:toggle_inventory()
 			elif crafting_window and crafting_window.visible:toggle_crafting(false)
 			else: _spawn_pause_menu()
@@ -502,7 +595,6 @@ func _input(event):
 			select_hotbar_slot(index)
 		elif event.keycode == KEY_H:
 			_unequip_all()
-		# [NEW] ESC closes the Game Hub as well
 		elif event.keycode == KEY_ESCAPE:
 			var hub = get_node_or_null("GameHubUI")
 			if hub: hub.queue_free()
@@ -510,9 +602,11 @@ func _input(event):
 func _spawn_pause_menu():
 	var pause_instance = PAUSE_MENU_SCENE.instantiate()
 	get_parent().add_child(pause_instance) 
-	# The PauseMenu script handles setting get_tree().paused = true automatically on _ready
 
 func _unhandled_input(event):
+	# [FIX] Also block world clicks if typing
+	if is_typing(): return
+
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		if placement_mode:
 			_confirm_placement_at_hologram()
@@ -581,7 +675,7 @@ func start_placement_mode(type):
 	if type == "Bonfire": path = "res://Assets/Bonfire_02-Sheet.png"
 	elif type == "Fence": path = "res://Assets/FENCE 1 - DAY.png"
 	elif type == "Turnip": path = "res://Assets/Turnip.png" 
-	elif type == "Lighthouse": path = "res://Assets/LightHouseAnimHighRes1.png" # [NEW] Hologram Frame 1
+	elif type == "Lighthouse": path = "res://Assets/LightHouseAnimHighRes1.png"
 	
 	if ResourceLoader.exists(path):
 		var tex = load(path)
@@ -604,7 +698,7 @@ func start_placement_mode(type):
 			hologram.offset = Vector2(0, 0)
 		elif type == "Lighthouse":
 			hologram.texture = tex
-			hologram.offset = Vector2(0, -32) # Pivot adjustment
+			hologram.offset = Vector2(0, -32)
 		else:
 			hologram.texture = tex
 			hologram.offset = Vector2(0, -2)
@@ -629,12 +723,11 @@ func _confirm_placement_at_hologram():
 func _on_server_message(data):
 	var event = data.get("event", "")
 	
-	# --- [NEW] Game Hub Trigger ---
 	if event == "open_window":
 		var window_name = data.get("window", "")
 		if window_name == "game_hub":
 			open_game_hub()
-			return # Stop processing other events if opening window
+			return 
 			
 	if event == "inventory_update":
 		var new_items = data["items"]
@@ -650,12 +743,11 @@ func _on_server_message(data):
 		if player and player.has_method("_on_take_damage_check"):
 			player._on_take_damage_check(data["hp"])
 
-# [NEW] Function to spawn the Game Hub Window
 func open_game_hub():
 	if has_node("GameHubUI"): return
 	var hub = game_hub_scene.instantiate()
 	add_child(hub)
-	update_cursor_state() # Will unlock cursor because node exists
+	update_cursor_state()
 
 func detect_and_show_pickups(new_items):
 	for item_name in new_items:

@@ -1,11 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://bwj4542rp8ixu"]
+[gd_scene load_steps=4 format=3 uid="uid://c1pncgloa44r1"]
 
-[ext_resource type="Script" uid="uid://dqtai0xgdr3d6" path="res://PauseMenu.gd" id="1_logic"]
-[ext_resource type="Script" uid="uid://btu38t6j8jkgu" path="res://ProceduralMenuBackground.gd" id="2_bg_gen"]
+[ext_resource type="Script" uid="uid://dqtai0xgdr3d6" path="res://PauseMenu.gd" id="1_script"]
 [ext_resource type="Script" uid="uid://dp0x0p1e67y4l" path="res://SettingsMenu.gd" id="3_settings"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(0.1, 0.08, 0.14, 0.95)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_etnfi"]
+bg_color = Color(0.16, 0.13, 0.2, 0.95)
 border_width_left = 4
 border_width_top = 4
 border_width_right = 4
@@ -19,7 +18,7 @@ corner_radius_bottom_left = 10
 [node name="PauseMenu" type="CanvasLayer"]
 process_mode = 3
 layer = 100
-script = ExtResource("1_logic")
+script = ExtResource("1_script")
 
 [node name="Dimmer" type="ColorRect" parent="."]
 anchors_preset = 15
@@ -27,18 +26,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.4)
-
-[node name="ProceduralBackground" type="Control" parent="."]
-modulate = Color(1, 1, 1, 0.8)
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-script = ExtResource("2_bg_gen")
+color = Color(0, 0, 0, 0.47)
 
 [node name="MainContainer" type="CenterContainer" parent="."]
 anchors_preset = 15
@@ -47,36 +35,47 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBox" type="VBoxContainer" parent="MainContainer"]
+[node name="Panel" type="PanelContainer" parent="MainContainer"]
+custom_minimum_size = Vector2(250, 300)
 layout_mode = 2
-theme_override_constants/separation = 20
 
-[node name="Label" type="Label" parent="MainContainer/VBox"]
+[node name="VBox" type="VBoxContainer" parent="MainContainer/Panel"]
 layout_mode = 2
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
-theme_override_constants/shadow_offset_x = 4
-theme_override_constants/shadow_offset_y = 4
-theme_override_font_sizes/font_size = 64
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Title" type="Label" parent="MainContainer/Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
 text = "PAUSED"
 horizontal_alignment = 1
 
-[node name="ResumeBtn" type="Button" parent="MainContainer/VBox"]
-custom_minimum_size = Vector2(250, 60)
+[node name="HSeparator" type="HSeparator" parent="MainContainer/Panel/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
+
+[node name="ResumeBtn" type="Button" parent="MainContainer/Panel/VBox"]
+custom_minimum_size = Vector2(180, 40)
+layout_mode = 2
+size_flags_horizontal = 4
 text = "RESUME"
 
-[node name="SettingsBtn" type="Button" parent="MainContainer/VBox"]
-custom_minimum_size = Vector2(250, 60)
+[node name="ProfileBtn" type="Button" parent="MainContainer/Panel/VBox"]
+custom_minimum_size = Vector2(180, 40)
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
+size_flags_horizontal = 4
+text = "PROFILE"
+
+[node name="SettingsBtn" type="Button" parent="MainContainer/Panel/VBox"]
+custom_minimum_size = Vector2(180, 40)
+layout_mode = 2
+size_flags_horizontal = 4
 text = "SETTINGS"
 
-[node name="QuitBtn" type="Button" parent="MainContainer/VBox"]
-custom_minimum_size = Vector2(250, 60)
+[node name="QuitBtn" type="Button" parent="MainContainer/Panel/VBox"]
+custom_minimum_size = Vector2(180, 40)
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
-text = "QUIT TO TITLE"
+size_flags_horizontal = 4
+text = "QUIT TO MENU"
 
 [node name="SettingsPanel" type="PanelContainer" parent="."]
 visible = false
@@ -91,7 +90,7 @@ offset_right = 300.0
 offset_bottom = 250.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+theme_override_styles/panel = SubResource("StyleBoxFlat_etnfi")
 script = ExtResource("3_settings")
 
 [node name="Margin" type="MarginContainer" parent="SettingsPanel"]

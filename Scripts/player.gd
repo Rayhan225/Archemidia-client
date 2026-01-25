@@ -4,6 +4,7 @@ const SPEED = 100.0
 const PICKAXE_SCENE = preload("res://pickaxe_crafted.tscn")
 const HOE_SCENE = preload("res://hoe_crafted.tscn")
 const FLOATING_TEXT_SCENE = preload("res://floating_text.tscn")
+
 var is_input_locked = false
 
 @onready var sprite = $AnimatedSprite2D
@@ -27,6 +28,7 @@ var base_hand_pos = Vector2.ZERO
 
 func _ready():
 	NetworkManager.server_message_received.connect(_on_server_message)
+	
 	if camera:
 		camera.enabled = true
 		camera.top_level = true 
@@ -49,6 +51,21 @@ func _ready():
 	hand_sprite.position = base_hand_pos
 	
 	sprite.animation_finished.connect(_on_animation_finished)
+	
+	# [NEW] Apply Avatar Color immediately on spawn
+	update_avatar_visuals(NetworkManager.my_avatar_id)
+
+# --- NEW: AVATAR VISUALS ---
+func update_avatar_visuals(id):
+	var color = Color.WHITE
+	match id:
+		1: color = Color(1, 0.4, 0.4) # Red
+		2: color = Color(0.4, 1, 0.4) # Green
+		3: color = Color(0.4, 0.6, 1) # Blue
+		_: color = Color.WHITE        # Default
+	
+	if sprite:
+		sprite.modulate = color
 
 func set_input_locked(locked: bool):
 	is_input_locked = locked
@@ -60,6 +77,7 @@ func _physics_process(delta):
 	if is_input_locked:
 		move_and_slide() # Keep applying gravity/velocity decay if needed, but no input
 		return
+		
 	if Input.is_action_just_pressed("ui_accept"):
 		if not is_attacking:
 			attack()
@@ -207,8 +225,7 @@ func attack():
 			tween.tween_property(hand_sprite, "rotation", start_rot, 0.2).set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT)
 
 	# --- HIT DETECTION ---
-	# [CHANGE] All interactions now happen at distance 0 (current tile)
-	# regardless of tool type or direction.
+	# Interactions happen at distance 0 (current tile) + 1 tile forward
 	var points_to_check = [0.0]
 
 	var sent_tiles = {}
@@ -249,9 +266,11 @@ func attack():
 	apply_shake(2.0)
 
 func show_wrong_tool_feedback():
-	var txt = FLOATING_TEXT_SCENE.instantiate()
-	txt.global_position = hand_sprite.global_position + Vector2(0, -50)
-	get_tree().root.add_child(txt)
+	if FLOATING_TEXT_SCENE:
+		var txt = FLOATING_TEXT_SCENE.instantiate()
+		txt.text = "X"
+		txt.global_position = hand_sprite.global_position + Vector2(0, -50)
+		get_tree().root.add_child(txt)
 
 func get_bezier_point(t: float, p0: Vector2, p1: Vector2, p2: Vector2) -> Vector2:
 	var u = 1 - t
@@ -286,8 +305,8 @@ func create_hand_swipe(reach, color, is_chop_anim):
 		if facing_dir == "down":
 			slash.show_behind_parent = false
 			p0 = Vector2(0, -30)      
-			p1 = Vector2(0, 20)       
-			p2 = Vector2(0, 40)       
+			p1 = Vector2(0, 20)        
+			p2 = Vector2(0, 40)        
 		elif facing_dir == "up":
 			slash.show_behind_parent = true 
 			p0 = Vector2(0, -30)
@@ -296,7 +315,7 @@ func create_hand_swipe(reach, color, is_chop_anim):
 		elif facing_dir == "side":
 			slash.show_behind_parent = false
 			var x_dir = 35.0 if not sprite.flip_h else -35.0
-			p0 = Vector2(0, -25)               
+			p0 = Vector2(0, -25)                
 			p1 = Vector2(x_dir * 1.4, -5)      
 			p2 = Vector2(x_dir * 0.4, 35)      
 		
@@ -348,7 +367,9 @@ func equip_item(texture):
 		child.queue_free()
 
 	if texture:
-		var path = texture.resource_path.to_lower()
+		var path = ""
+		if texture.resource_path:
+			path = texture.resource_path.to_lower()
 		
 		if "pickaxe" in path:
 			hand_sprite.texture = null
@@ -409,11 +430,20 @@ func _on_server_message(data):
 			
 		if data.has("hp"):
 			var new_hp = data["hp"]
-			if new_hp < current_hp: _on_take_damage()
+			if new_hp < current_hp: _on_take_damage(new_hp)
 			current_hp = new_hp
 
-func _on_take_damage():
+func _on_take_damage(new_hp):
 	sprite.modulate = Color(10, 0, 0)
 	var t = create_tween()
 	t.tween_property(sprite, "modulate", Color(1, 1, 1), 0.3)
+	# Re-apply avatar tint after flash
+	t.tween_callback(func(): update_avatar_visuals(NetworkManager.my_avatar_id))
 	apply_shake(8.0)
+	
+	# Spawn floating text
+	if FLOATING_TEXT_SCENE:
+		var txt = FLOATING_TEXT_SCENE.instantiate()
+		txt.text = str(current_hp - new_hp)
+		txt.global_position = global_position + Vector2(0, -20)
+		get_tree().root.add_child(txt)

@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cxv47io8btbkf" path="res://Scripts/ItemDrop.gd" id="2_script"]
 
 [node name="rope_drop" type="Area2D"]
+y_sort_enabled = true
 script = ExtResource("2_script")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

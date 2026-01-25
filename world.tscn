@@ -78,6 +78,7 @@ sources/0 = SubResource("TileSetAtlasSource_ic0uy")
 sources/4 = SubResource("TileSetAtlasSource_70uel")
 
 [node name="World" type="Node2D"]
+y_sort_enabled = true
 
 [node name="WaterLayer" parent="." instance=ExtResource("1_k3n1d")]
 

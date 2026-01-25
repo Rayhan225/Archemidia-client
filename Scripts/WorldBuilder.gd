@@ -3,6 +3,7 @@ extends TileMapLayer
 @export var player_path: NodePath
 var player: CharacterBody2D
 
+
 # Chunk & Object Tracking
 var chunk_objects = {} 
 var loaded_chunks = {}
@@ -13,7 +14,7 @@ var spawn_queue = []
 
 var objects_by_coord = {} 
 var active_monsters = {} 
-var slime_scene = preload("res://slime.tscn")
+var slime_scene = load("res://slime.tscn")
 
 const LOAD_RADIUS = 2 
 const PRIORITY_RADIUS = 1 
@@ -26,19 +27,23 @@ var target_chunk_center = Vector2i(-999, -999)
 var is_updating_chunks = false
 
 # Object Scenes
-var poof_scene = preload("res://effect_poof.tscn")
-var item_drop_scene = preload("res://tree_drop.tscn") 
-var stone_drop_scene = preload("res://stone_drop.tscn") 
-var rope_drop_scene = preload("res://rope_drop.tscn")
-var pickaxe_drop_scene = preload("res://pickaxe_crafted.tscn")
-var hoe_drop_scene = preload("res://hoe_crafted.tscn")
-var table_drop_scene = preload("res://crafting_table_drop.tscn")
-var bonfire_drop_scene = preload("res://bonfire_drop.tscn")
-var fence_scene = preload("res://fence.tscn")
-var lighthouse_scene = preload("res://Lighthouse.tscn")
+var poof_scene = load("res://effect_poof.tscn")
+var item_drop_scene = load("res://tree_drop.tscn") 
+var stone_drop_scene = load("res://stone_drop.tscn") 
+var rope_drop_scene = load("res://rope_drop.tscn")
+var pickaxe_drop_scene = load("res://pickaxe_crafted.tscn")
+var hoe_drop_scene = load("res://hoe_crafted.tscn")
+var table_drop_scene = load("res://crafting_table_drop.tscn")
+var bonfire_drop_scene = load("res://bonfire_drop.tscn")
+var fence_scene = load("res://fence.tscn")
+var lighthouse_scene = load("res://lighthouse.tscn")
 
 # New Preload
-var farmland_scene = preload("res://Farmland.tscn")
+var farmland_scene = load("res://Farmland.tscn")
+
+# Make sure this uses 'load', NOT 'preload' to avoid crashes
+var remote_player_scene = load("res://RemotePlayer.tscn")
+var remote_players = {}
 
 # Coastline Overlay
 var coastline_overlay: Node2D
@@ -58,6 +63,11 @@ func _ready():
 		var p = local_to_map(to_local(player.global_position))
 		update_chunks_progressive(floor(p.x/float(CHUNK_SIZE)), floor(p.y/float(CHUNK_SIZE)))
 
+	# [FIX] REQUEST WORLD OBJECTS
+	# Explicitly ask server for current state of static objects (trees/rocks)
+	# This handles cases where the initial packet was sent while in the Main Menu
+	NetworkManager.send_request_world_objects()
+
 func is_tile_placeable(coord: Vector2i) -> bool:
 	if objects_by_coord.has(coord): 
 		var existing = objects_by_coord.get(coord)
@@ -67,13 +77,15 @@ func is_tile_placeable(coord: Vector2i) -> bool:
 	return true
 
 func _on_server_update(data):
-	if data.get("event") == "position_update":
+	var event = data.get("event")
+	
+	if event == "position_update":
 		if data.has("monsters"):
 			update_monsters(data["monsters"])
 		if data.has("objects"):
 			sync_world_objects(data["objects"])
 			
-	elif data.get("event") == "monster_hit":
+	elif event == "monster_hit":
 		var id = data["id"]
 		if active_monsters.has(id):
 			var m = active_monsters[id]
@@ -83,19 +95,19 @@ func _on_server_update(data):
 				active_monsters.erase(id)
 				spawn_drops(data.get("drops", []), m.position, false)
 				
-	elif data.get("event") == "object_removed":
+	elif event == "object_removed":
 		var coord = Vector2i(data.get("x", 0), data.get("y", 0))
 		remove_object_at(coord, data.get("drops", []))
 		
-	elif data.get("event") == "object_hit":
+	elif event == "object_hit":
 		var coord = Vector2i(data.get("x", 0), data.get("y", 0))
 		hit_object_at(coord, data.get("drops", []))
 		
-	elif data.get("event") == "object_placed":
+	elif event == "object_placed":
 		var coord = Vector2i(data.get("x", 0), data.get("y", 0))
 		_real_spawn_object(data.get("type", ""), coord)
 
-	elif data.get("event") == "item_spawn":
+	elif event == "item_spawn":
 		var drop_pos = Vector2(data.get("x", 0), data.get("y", 0))
 		spawn_drops(data.get("drops", []), drop_pos, true)
 
@@ -212,7 +224,7 @@ func load_chunk(c, is_immediate):
 	var req = HTTPRequest.new();
 	add_child(req)
 	req.request_completed.connect(func(r,co,h,b): _on_chunk(c, req, co, b, is_immediate))
-	req.request("http://localhost:8080/api/map/chunk?x=%d&y=%d&size=16" % [c.x*16, c.y*16])
+	req.request("http://192.168.0.194:8080/api/map/chunk?x=%d&y=%d&size=16" % [c.x*16, c.y*16])
 
 func unload_chunk(c):
 	var ox = c.x * 16;
@@ -257,7 +269,7 @@ func render_chunk(d, cx, cy, is_immediate):
 				set_cell(c, -1)
 				continue
 				
-			if tile_id == 0: set_cell(c, 3, Vector2i(0,0), 0)   
+			if tile_id == 0: set_cell(c, 3, Vector2i(0,0), 0)    
 			elif tile_id == 2: set_cell(c, 6, Vector2i(0,0), 0) 
 			elif tile_id == 1: set_cell(c, 5, Vector2i(0,0), 0) 
 			
@@ -339,12 +351,23 @@ func _real_spawn_object(type, coord):
 	elif type == "Bonfire": scene = load("res://bonfire.tscn")
 	elif type == "Fence": scene = fence_scene
 	elif type == "Lighthouse": scene = lighthouse_scene
-	
-	# --- NEW: Farmland ---
 	elif type == "Farmland": scene = farmland_scene
 	
-	if !scene: return
-	var s = scene.instantiate()
+	# Fallback if specific scene not found (Prevents crash)
+	var s = null
+	if scene:
+		s = scene.instantiate()
+	else:
+		# Create generic sprite holder if valid type but no scene
+		if type != "Grass": 
+			s = Sprite2D.new()
+			# Try loading icon
+			var path = "res://Assets/icons/" + type + ".png"
+			if not ResourceLoader.exists(path): path = "res://Assets/" + type + ".png"
+			if ResourceLoader.exists(path): s.texture = load(path)
+	
+	if !s: return
+
 	s.position = map_to_local(coord)
 	
 	if type == "Grass": 
@@ -421,3 +444,46 @@ func spawn_drops(drops_list, pos, is_player_drop=false):
 				
 				if drop.has_method("setup"): 
 					drop.setup(type, is_player_drop)
+
+func update_remote_players(players_data):
+	var current_ids = []
+	
+	for p_data in players_data:
+		var pid = p_data["id"]
+		current_ids.append(pid)
+		
+		# Spawn if new
+		if not remote_players.has(pid):
+			if not remote_player_scene: return
+			
+			var new_puppet = remote_player_scene.instantiate()
+			new_puppet.position = Vector2(p_data["x"], p_data["y"])
+			
+			# Add to world container if exists
+			var objs = get_node_or_null("../Objects")
+			if objs: objs.add_child(new_puppet)
+			else: add_child(new_puppet)
+			
+			remote_players[pid] = new_puppet
+		if remote_players.has(pid):
+			var rp = remote_players[pid]
+			if p_data.has("avatar") and rp.has_method("set_avatar_id"):
+				rp.set_avatar_id(int(p_data["avatar"]))
+		# Update existing
+		if remote_players.has(pid) and is_instance_valid(remote_players[pid]):
+			var rp = remote_players[pid]
+			rp.update_state(p_data["x"], p_data["y"], p_data.get("dir", 0))
+			
+			# Update Nameplate if data exists and method supported
+			if p_data.has("name") and rp.has_method("set_name_label"):
+				rp.set_name_label(p_data["name"])
+			
+	# Cleanup disconnected
+	var to_remove = []
+	for pid in remote_players:
+		if not pid in current_ids:
+			to_remove.append(pid)
+	for pid in to_remove:
+		if is_instance_valid(remote_players[pid]):
+			remote_players[pid].queue_free()
+		remote_players.erase(pid)

@@ -2,6 +2,7 @@ extends PanelContainer
 
 @onready var master_slider = $Margin/VBox/TabContainer/Audio/MasterVol/MasterSlider
 @onready var controls_grid = $Margin/VBox/TabContainer/Controls/Grid
+@onready var btn_close_settings = $CanvasLayerUI/SettingsPanel/Margin/VBox/CloseSettings
 
 var remap_actions = [
 	["ui_up", "Move Up"],
